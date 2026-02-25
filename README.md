@@ -1,305 +1,151 @@
-# GitHub Global - 一站式 GitHub 仓库多语言翻译平台
+# GitHub 仓库 AI 文档翻译平台
 
-> 零配置,一键翻译,让你的 GitHub 项目走向全球
+> 作者：[程序员鱼皮](https://yuyuanweb.feishu.cn/wiki/Abldw5WkjidySxkKxU2cQdAtnah)
+>
+> 本项目为教学项目，提供完整视频教程 + 文字教程 + 简历写法 + 面试题解 + 答疑服务，帮你提升项目能力，给简历增加亮点！
+>
+> ⭐️ 加入项目系列学习：[加入编程导航](https://www.codefather.cn/vip)
 
-## 🌐 项目简介
 
-GitHub Global 是一个 SaaS 平台,帮助开源项目作者将文档自动翻译成多种语言,扩大国际影响力。
 
-### 核心特性
+## 一、项目介绍
 
-- ✅ **即开即用** - 无需配置 GitHub Actions、无需本地环境
-- ✅ **SaaS 服务** - 提供现成的网页服务,在线操作
-- ✅ **多模型支持** - 通过 OpenRouter 统一接入多种 AI 模型
-- ✅ **智能同步** - 自动检测 GitHub 提交变更,增量翻译
-- ✅ **可视化配置** - 通过界面选择翻译范围,无需手写配置文件
+这是一套以 **AI 编程实战** 为核心的项目教程，基于 Next.js + GitHub App + OpenRouter，用 AI 编程的方式从 0 到 1 开发一个《GitHub 仓库 AI 文档翻译 SaaS 平台》，带你亲身体验 AI Vibe Coding 的完整工作流，学会用 AI 做出真正能用、能部署、能赚钱的产品！
 
-## 🚀 快速启动
+![](https://pic.yupi.icu/1/1769079083162-aa879560-6044-4ef7-a3a2-718b03070978-20260225143424199.png)
 
-> 📖 **推荐阅读**: [简化配置说明](./docs/简化配置说明.md) - 无需 openssl 命令的快速配置指南
+输入任意一个 GitHub 仓库地址，AI 自动将文档翻译成多种语言，并在基准语言内容发生变更时，**自动增量同步翻译**，生成 PR 等待仓库负责人合并，全程无需人工干预。
 
-### 前置要求
 
-- Node.js >= 20.0.0
-- npm >= 10.0.0
-- MySQL >= 8.0
 
-### 1. 克隆项目
+### 为什么做这个项目？
 
-\`\`\`bash
-git clone https://github.com/your-username/github-global.git
-cd github-global
-\`\`\`
+鱼皮开源了一套 AI 编程教程仓库 [ai-guide](https://github.com/liyupi/ai-guide)，包含了上百个中文教程文档。为了让海外用户也能看到，希望把仓库翻译成多语言版本，但人工翻译成本太高，GitHub Actions 又要自己折腾配置……
 
-### 2. 安装依赖
-
-\`\`\`bash
-npm install
-\`\`\`
-
-### 3. 配置环境变量
-
-复制环境变量示例文件:
-
-\`\`\`bash
-cp .env.example .env
-\`\`\`
-
-编辑 \`.env\` 文件,填入以下必需配置:
-
-\`\`\`env
-# 数据库连接
-DATABASE_URL="mysql://user:password@localhost:3306/github_global"
-
-# NextAuth 配置
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your-random-secret-key"
-
-# GitHub App 配置 (需要先创建 GitHub App)
-GITHUB_APP_ID="your-app-id"
-GITHUB_APP_CLIENT_ID="your-client-id"
-GITHUB_APP_CLIENT_SECRET="your-client-secret"
-GITHUB_APP_PRIVATE_KEY="your-private-key"
-
-# 加密密钥 (用于加密存储敏感信息)
-ENCRYPTION_KEY="your-32-byte-hex-key"
-
-# OpenRouter API Key (可选,用于平台托管模式)
-PLATFORM_OPENROUTER_API_KEY="sk-or-v1-xxx"
-\`\`\`
-
-### 4. 创建 GitHub App
-
-1. 访问 [GitHub Developer Settings](https://github.com/settings/apps)
-2. 点击 "New GitHub App"
-3. 填写以下信息:
-   - **App Name**: GitHub Global (或你自己的名称)
-   - **Homepage URL**: \`http://localhost:3000\`
-   - **Callback URL**: \`http://localhost:3000/api/auth/callback/github\`
-   - **Webhook URL**: \`http://localhost:3000/api/webhooks/github\` (可选)
-4. 配置权限:
-   - Repository permissions:
-     - Contents: Read & Write
-     - Metadata: Read
-     - Pull requests: Read & Write
-   - Account permissions:
-     - Email addresses: Read
-5. 创建后,记录以下信息到 \`.env\`:
-   - App ID
-   - Client ID
-   - Client Secret
-   - Private Key (点击 "Generate a private key" 下载)
-
-### 5. 初始化数据库
-
-\`\`\`bash
-# 生成 Prisma Client
-npm run db:generate
-
-# 推送数据库 Schema (开发环境)
-npm run db:push
-
-# 或运行迁移 (生产环境)
-npm run db:migrate
-\`\`\`
-
-### 6. 启动开发服务器
-
-\`\`\`bash
-npm run dev
-\`\`\`
-
-访问 [http://localhost:3000](http://localhost:3000) 查看应用。
+既然如此，**不如做一个更通用的工具**。
 
-## 📁 项目结构
-
-\`\`\`
-github-global/
-├── src/
-│   ├── app/                      # Next.js App Router 页面
-│   │   ├── (auth)/              # 认证相关页面
-│   │   ├── dashboard/           # 仪表盘
-│   │   ├── repo/[id]/           # 仓库详情
-│   │   ├── api/                 # API 路由
-│   │   ├── layout.tsx
-│   │   ├── page.tsx
-│   │   └── globals.css
-│   ├── components/              # React 组件
-│   │   ├── ui/                  # 基础 UI 组件
-│   │   └── ...
-│   ├── lib/                     # 核心库
-│   │   ├── constants.ts         # 常量定义
-│   │   └── utils.ts             # 工具函数
-│   └── types/                   # TypeScript 类型
-├── prisma/
-│   └── schema.prisma            # 数据库 Schema
-├── public/                      # 静态资源
-├── docs/                        # 文档
-│   ├── 需求规格文档.md
-│   ├── 技术实现方案文档.md
-│   └── 后端API接口文档.md
-├── .env.example                 # 环境变量示例
-├── package.json
-├── tailwind.config.ts
-└── tsconfig.json
-\`\`\`
-
-## 🎨 技术栈
-
-- **前端框架**: Next.js 15 (App Router)
-- **UI 组件**: Tailwind CSS + Radix UI
-- **编程语言**: TypeScript
-- **数据库**: MySQL 8.0
-- **ORM**: Prisma 6.0
-- **认证**: NextAuth.js v5
-- **GitHub 集成**: Octokit + GitHub App
-- **AI 接入**: OpenRouter API
+这就是 GitHub Global 项目的起点：输入任意一个 GitHub 仓库地址，AI 自动将文档翻译成多种语言，并在基准语言内容发生变更时，**自动增量同步翻译**，生成 PR 等待仓库负责人合并，全程无需人工干预。
 
-## 🔧 开发命令
+零配置，一键翻译，让你的 GitHub 项目走向全球！
 
-\`\`\`bash
-# 开发服务器
-npm run dev
+![](https://pic.yupi.icu/1/GitHub%2520Global%2520%25E4%25B8%25BB%25E9%25A1%25B5.png)
 
-# 构建生产版本
-npm run build
 
-# 启动生产服务器
-npm start
 
-# 代码检查
-npm run lint
+### 6 大核心能力
 
-# Prisma 相关
-npm run db:generate      # 生成 Prisma Client
-npm run db:push          # 推送 Schema 到数据库
-npm run db:migrate       # 运行数据库迁移
-npm run db:studio        # 打开 Prisma Studio
-\`\`\`
+1）用 GitHub 账号一键登录，基于 GitHub App 实现安全登录与授权。
 
-## 🐳 Docker 部署
+![](https://pic.yupi.icu/1/image-20260225142930323.png)
 
-### 使用 Docker Compose
 
-\`\`\`bash
-# 构建并启动
-cd docker
-docker-compose up -d
 
-# 查看日志
-docker-compose logs -f app
+2）导入 GitHub 仓库，输入地址即可自动拉取仓库信息。
 
-# 停止服务
-docker-compose down
-\`\`\`
+![](https://pic.yupi.icu/1/1769079897565-92698844-bfcc-4f6d-b226-d18352ea2244-20260225144921746-20260225144924730.png)
 
-### 环境变量配置
 
-在 \`docker/docker-compose.yml\` 中配置环境变量,或创建 \`.env\` 文件。
 
-## 📖 使用说明
+3）配置翻译，可视化选择翻译范围和目标语言（支持 20 种主流语言）。
 
-### 1. 登录
+![](https://pic.yupi.icu/1/1769079897565-92698844-bfcc-4f6d-b226-d18352ea2244-20260225144921746-20260225144924730.png)
 
-使用 GitHub 账号登录系统。
 
-### 2. 导入仓库
 
-在仪表盘页面输入 GitHub 仓库 URL,点击"导入仓库"。
+4）一键执行翻译，实时展示进度，翻译完成后自动创建 PR。
 
-### 3. 配置翻译
+![](https://pic.yupi.icu/1/1769079926879-90640105-2d23-418c-b4b5-e962eab31299-20260225144931498.png)
 
-- 选择基准语言(源语言)
-- 选择目标语言(可多选)
-- 选择要翻译的文件范围
-- (可选)配置自己的 OpenRouter API Key
+![](https://pic.yupi.icu/1/1769080074375-806fa172-c440-47e3-93fd-07ad33c271ea-20260225144935674.png)
 
-### 4. 开始翻译
+仓库负责人可以自己选择是否合并本次翻译，既方便又安全：
 
-点击"开始翻译"按钮,系统会:
-1. 获取仓库文件
-2. 调用 AI 进行翻译
-3. 创建翻译分支
-4. 生成 Pull Request
+![](https://pic.yupi.icu/1/1769080059408-f3e3d44f-df55-4872-8bdc-c781b71cfc81.png)
 
-### 5. 合并翻译
 
-在 GitHub 上查看并合并 PR,翻译内容将添加到仓库的 \`translations/\` 目录下。
 
-## 🌍 支持的语言
+5）自动触发增量翻译，开启后每次 Push 都会自动翻译变更的文档。
 
-- 英语 (English)
-- 简体中文 (Simplified Chinese)
-- 繁体中文 (Traditional Chinese)
-- 日语 (Japanese)
-- 韩语 (Korean)
-- 西班牙语 (Spanish)
-- 法语 (French)
-- 德语 (German)
-- 葡萄牙语 (Portuguese)
-- 俄语 (Russian)
-- 更多语言...
+![](https://pic.yupi.icu/1/1770201178863-f4e450bd-b92f-4f56-9b43-82aed36a73b0-20260225142203617.png)
 
-## 🤖 支持的 AI 模型
+![](https://pic.yupi.icu/1/1770201323050-d991c61a-2ffa-40c1-b1c8-4334ff05c248-20260225141729741.png)
 
-- Claude 3.5 Sonnet (推荐)
-- GPT-4o (推荐)
-- Gemini Pro 1.5
-- 更多模型...
 
-## 🔒 安全说明
 
-- GitHub Access Token 使用 AES-256-GCM 加密存储
-- OpenRouter API Key 加密存储
-- 支持用户自带 API Key,数据不经过平台
-- 所有 API 接口需要认证
+6）自定义大模型和 API Key，支持 GPT、Claude、Gemini、DeepSeek 等主流模型。
 
-## 📝 API 文档
+![](https://pic.yupi.icu/1/1770194573295-9e7552ca-b0c1-4612-a590-6060b5717d79-20260225144945946.png)
 
-详细的 API 接口文档请查看: [后端API接口文档.md](./docs/后端API接口文档.md)
 
-## 🐛 常见问题
 
-### Q: 如何生成 ENCRYPTION_KEY?
+## 二、项目优势
 
-\`\`\`bash
-# 使用 Node.js 生成
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-\`\`\`
+本项目选题新颖，紧跟 AI 编程时代，以 **真实 SaaS 产品开发** 为导向，区别于增删改查的烂大街项目。项目内容精炼，**不到一周就能学完**，带你掌握 AI 编程的完整工作流，给你的简历和求职大幅增加竞争力！
 
-### Q: 如何生成 NEXTAUTH_SECRET?
+技术丰富，覆盖 AI 编程全链路：
 
-\`\`\`bash
-# 使用 openssl
-openssl rand -base64 32
-\`\`\`
+![](https://pic.yupi.icu/1/image-20260225140224582.png)
 
-### Q: MySQL 连接失败?
+从这个项目中你可以学到：
 
-确保 MySQL 服务已启动,并且 \`DATABASE_URL\` 配置正确:
+- 如何用 AI 进行需求调研，生成专业的《需求规格文档》？
+- 如何用多 AI 并行的方式，同时开发前端和后端？
+- 如何与 GitHub App 对接，实现安全的 OAuth 授权和仓库操作？
+- 如何接入 OpenRouter，统一对接数百种 AI 大模型？
+- 如何使用 GitHub API 获取仓库文件树、提交文件、创建 PR？
+- 如何通过 GitHub Webhook 实现事件驱动的自动化翻译？
+- 如何使用内网穿透工具，在本地调试 Webhook 回调？
+- 如何用 Vercel 部署 Next.js 全栈项目，快速上线？
+- 如何在 AI 开发流程中进行代码审查、版本控制和问题修复？
+- 如何识别竞品差异化机会，设计真正有竞争力的产品？
 
-\`\`\`env
-DATABASE_URL="mysql://用户名:密码@主机:端口/数据库名"
-\`\`\`
 
-### Q: GitHub App 回调失败?
 
-检查 GitHub App 的 Callback URL 是否正确配置为:
-\`http://localhost:3000/api/auth/callback/github\`
 
-## 📄 许可证
+### 鱼皮系列项目优势
 
-MIT License
+鱼皮的原创项目以 **实战** 为主，用 **全程直播** 的方式 **从 0 到 1** 带做，从需求分析、技术选型、项目设计、项目初始化、Demo 编写、前后端开发实现、项目优化、部署上线等，每个环节我都 **从理论到实践** 给大家讲的明明白白、每个细节都不放过！
 
-## 🤝 贡献
+比起看网上的教程学习，鱼皮项目系列的优势：从学知识 => 实践项目 => 复习笔记 => 项目答疑 => 简历写法 => 面试题解的一条龙服务
 
-欢迎提交 Issue 和 Pull Request!
+![](https://pic.yupi.icu/1/image-20260225142355401.png)
 
-## 📧 联系方式
+编程导航已有 **20+ 套项目教程！** 每个项目的学习重点不同，几乎全都是前端 + 后端的 **全栈项目**，也有大量 AI 应用开发项目。
 
-- 作者: 鱼皮
-- 项目地址: [GitHub](https://github.com/your-username/github-global)
+详细请见：[https://codefather.cn/course](https://www.codefather.cn/course)（在该页面右侧有教程推荐和学习建议）
 
----
+往期项目介绍视频：[https://bilibili.com/video/BV1YvmbYbEgS](https://www.bilibili.com/video/BV1YvmbYbEgS/)
 
-**让你的 GitHub 项目走向全球! 🌏**
+鱼皮的项目帮很多同学拿到了大厂高薪 Offer：
+
+![](https://pic.yupi.icu/1/%E7%BC%96%E7%A8%8B%E5%AF%BC%E8%88%AA2026%20offer%E6%8A%A5%E5%96%9C.png)
+
+
+
+## 三、更多介绍
+
+功能模块：
+
+![](https://pic.yupi.icu/1/image-20260225140201706.png)
+
+架构设计：
+
+![](https://pic.yupi.icu/1/image-20260225141302579.png)
+
+
+
+## 加入项目学习
+
+编程导航已有 **20+ 套项目教程**！每个项目的学习重点不同，几乎全都是前端 + 后端的 **全栈** 项目，也有大量 AI 应用开发项目。
+
+![](https://pic.yupi.icu/1/%25E9%25A1%25B9%25E7%259B%25AE%25E6%2595%2599%25E7%25A8%258B.png)
+
+欢迎加入 [编程导航](https://www.codefather.cn/vip)，加入后不仅可以全程跟学本项目，往期 **20+ 套原创项目教程** 也都可以无限回看。还能享受更多原创技术资料、学习和求职指导、上百场面试回放视频，开启你的编程起飞之旅~
+
+🧧 助力新项目学习，给大家发放 **限时编程导航优惠券**，扫码即可领券加入。加入三天内不满意可全额退款，欢迎加入体验，名额有限，速来学习！
+
+<img width="404" alt="image" src="https://github.com/user-attachments/assets/56411098-b60e-4267-8ba2-4ebc5d416afc" />
+
+1 天不到 1 块钱，绝对是对自己最值的投资！成为编程导航会员后，可以解锁 20 多套项目的教程和资料，PC 网站和 APP 都可以学习，如图：
+
+![](https://pic.yupi.icu/1/image-20250120113756426-20250422160856746.png)
