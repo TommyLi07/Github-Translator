@@ -12,6 +12,8 @@
 
 这是一套以 **AI 编程实战** 为核心的项目教程，基于 Next.js + GitHub App + OpenRouter，用 AI 编程的方式从 0 到 1 开发一个《GitHub 仓库 AI 文档翻译 SaaS 平台》，带你亲身体验 AI Vibe Coding 的完整工作流，学会用 AI 做出真正能用、能部署、能赚钱的产品！
 
+📺 项目介绍视频，快速查看成品效果：https://bilibili.com/video/BV1mAAmzqEfP
+
 ![](https://pic.yupi.icu/1/1769079083162-aa879560-6044-4ef7-a3a2-718b03070978-20260225143424199.png)
 
 输入任意一个 GitHub 仓库地址，AI 自动将文档翻译成多种语言，并在基准语言内容发生变更时，**自动增量同步翻译**，生成 PR 等待仓库负责人合并，全程无需人工干预。
