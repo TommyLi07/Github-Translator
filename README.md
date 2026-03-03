@@ -136,6 +136,75 @@
 
 
 
+## 四、快速运行
+
+> 详细的保姆级教程请参考 [本地运行指南](./docs/本地运行指南.md)
+
+### 前置条件
+
+- Node.js >= 20
+- MySQL >= 8.0
+- 一个 [GitHub App](https://github.com/settings/apps/new)（用于登录和仓库操作）
+- 一个 [OpenRouter API Key](https://openrouter.ai/keys)（用于 AI 翻译）
+
+### 1. 克隆并安装依赖
+
+```bash
+git clone https://github.com/liyupi/github-global.git
+cd github-global
+npm install
+```
+
+### 2. 配置环境变量
+
+```bash
+# 创建环境变量文件（两个文件内容保持一致）
+cp .env.example .env
+cp .env.example .env.local
+```
+
+编辑 `.env` 和 `.env.local`，填入你的配置：
+
+```bash
+DATABASE_URL=mysql://root:你的密码@localhost:3306/github_global
+NEXTAUTH_URL=http://localhost:3123
+AUTH_SECRET=随机字符串至少32位
+GITHUB_APP_ID=你的AppID
+GITHUB_APP_CLIENT_ID=你的ClientID
+GITHUB_APP_CLIENT_SECRET=你的ClientSecret
+GITHUB_APP_PRIVATE_KEY_PATH=./private-key.pem
+PLATFORM_OPENROUTER_API_KEY=sk-or-v1-你的key
+```
+
+将 GitHub App 的私钥文件保存为项目根目录下的 `private-key.pem`。
+
+### 3. 初始化数据库并启动
+
+```bash
+# 创建数据库（MySQL 命令行）
+mysql -u root -p -e "CREATE DATABASE github_global CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 生成 Prisma 客户端 + 建表
+npx prisma generate
+npx prisma db push
+
+# 启动开发服务器
+npm run dev
+```
+
+访问 **http://localhost:3123** 即可使用。
+
+### Docker 部署
+
+```bash
+docker-compose up -d
+docker-compose exec app npx prisma db push
+```
+
+更多细节请查看 [本地运行指南](./docs/本地运行指南.md) 和 [人工配置文档](./docs/人工配置文档.md)。
+
+
+
 ## 加入项目学习
 
 编程导航已有 **20+ 套项目教程**！每个项目的学习重点不同，几乎全都是前端 + 后端的 **全栈** 项目，也有大量 AI 应用开发项目。
