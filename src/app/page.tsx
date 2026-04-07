@@ -76,36 +76,27 @@ export default function Home() {
               零配置，一键翻译，AI 驱动。
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="mt-2 flex justify-center">
               {isLoading ? (
-                <Button size="lg" disabled>
+                <Button size="lg" className="min-w-40" disabled>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   加载中...
                 </Button>
               ) : session?.user ? (
                 <Link href="/dashboard">
-                  <Button size="lg" className="w-full sm:w-auto">
+                  <Button size="lg" className="min-w-40">
                     进入控制台
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
               ) : (
                 <Link href="/login">
-                  <Button size="lg" className="w-full sm:w-auto">
+                  <Button size="lg" className="min-w-40">
                     使用 GitHub 登录
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
               )}
-              <a 
-                href="https://github.com/liyupi/github-global" 
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  查看源码
-                </Button>
-              </a>
             </div>
           </div>
         </section>
@@ -147,7 +138,16 @@ export default function Home() {
               </p>
             </div>
             
-            <div className="space-y-8">
+            <div className="relative">
+              <div className="hidden md:block pointer-events-none absolute inset-0 z-30">
+                <div className="absolute top-12 -translate-y-1/2 left-[calc(33.333%-14px)] text-primary/70 arrow-shine arrow-shine-left">
+                  <ArrowRight className="h-8 w-8" />
+                </div>
+                <div className="absolute top-12 -translate-y-1/2 left-[calc(66.666%-14px)] text-primary/70 arrow-shine arrow-shine-right">
+                  <ArrowRight className="h-8 w-8" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10 items-stretch">
               {[
                 {
                   step: "1",
@@ -165,44 +165,46 @@ export default function Home() {
                   description: "点击翻译按钮，AI 自动完成翻译并创建 PR",
                 },
               ].map((item) => (
-                <div key={item.step} className="flex gap-6 items-start">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold">
+                <div
+                  key={item.step}
+                  className="relative rounded-xl bg-card p-6 text-center transition-all duration-200 h-full min-h-[220px] flex flex-col items-center"
+                >
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground text-xl font-bold">
                     {item.step}
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                    <p className="text-muted-foreground">{item.description}</p>
-                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
+                  <p className="text-muted-foreground">{item.description}</p>
                 </div>
               ))}
+              </div>
             </div>
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="py-16 md:py-24 px-4 bg-primary text-primary-foreground">
+        <section className="py-16 md:py-24 px-4">
           <div className="container mx-auto text-center max-w-2xl">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               准备好让项目走向全球了吗？
             </h2>
-            <p className="text-lg opacity-90 mb-8">
+            <p className="text-lg text-muted-foreground mb-8">
               立即开始，让全世界的开发者都能阅读你的文档
             </p>
             {isLoading ? (
-              <Button size="lg" variant="secondary" disabled>
+              <Button size="lg" disabled>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 加载中...
               </Button>
             ) : session?.user ? (
               <Link href="/dashboard">
-                <Button size="lg" variant="secondary">
+                <Button size="lg">
                   进入控制台
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
             ) : (
               <Link href="/login">
-                <Button size="lg" variant="secondary">
+                <Button size="lg">
                   免费开始使用
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
