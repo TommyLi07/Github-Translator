@@ -46,3 +46,8 @@ prisma/migrations
 *.swp
 *.swo
 *~
+
+# Local shared assets/tools
+.shared/
+__pycache__/
+*.pyc
