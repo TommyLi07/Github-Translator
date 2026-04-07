@@ -1,4 +1,4 @@
-# GitHub Global Docker Compose 配置
+# Github Translator Docker Compose 配置
 
 version: '3.8'
 
@@ -8,11 +8,11 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3123:3123"
+      - '3123:3123'
     volumes:
       - ./private-key.pem:/app/private-key.pem:ro
     environment:
-      - DATABASE_URL=mysql://github_global:github_global_password@db:3306/github_global
+      - DATABASE_URL=mysql://github_translator:github_translator_password@db:3306/github_translator
       - NEXTAUTH_URL=http://localhost:3123
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - GITHUB_APP_ID=${GITHUB_APP_ID}
@@ -32,15 +32,25 @@ services:
     image: mysql:8.0
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password}
-      - MYSQL_DATABASE=github_global
-      - MYSQL_USER=github_global
-      - MYSQL_PASSWORD=github_global_password
+      - MYSQL_DATABASE=github_translator
+      - MYSQL_USER=github_translator
+      - MYSQL_PASSWORD=github_translator_password
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - '3306:3306'
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_password}"]
+      test:
+        [
+          'CMD',
+          'mysqladmin',
+          'ping',
+          '-h',
+          'localhost',
+          '-u',
+          'root',
+          '-p${MYSQL_ROOT_PASSWORD:-root_password}',
+        ]
       timeout: 20s
       retries: 10
       interval: 5s

@@ -1,4 +1,4 @@
-# GitHub Global Dockerfile
+# Github Translator Dockerfile
 FROM node:20-alpine AS base
 
 # 安装依赖阶段

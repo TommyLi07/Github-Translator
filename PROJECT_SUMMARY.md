@@ -1,4 +1,4 @@
-# GitHub Global - 项目开发完成总结
+# Github Translator - 项目开发完成总结
 
 ## ✅ 项目状态
 
@@ -370,7 +370,7 @@ docker-compose exec app npx prisma db push
 ## 📧 联系方式
 
 - 作者: 鱼皮
-- 项目: GitHub Global
+- 项目: Github Translator
 - 版本: v1.0.0 MVP
 
 ---

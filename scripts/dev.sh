@@ -2,7 +2,7 @@
 
 # 快速启动开发服务器
 
-echo "🚀 启动 GitHub Global 开发服务器..."
+echo "🚀 启动 Github Translator 开发服务器..."
 echo ""
 
 # 检查 .env 文件

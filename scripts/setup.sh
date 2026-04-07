@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# GitHub Global 项目快速启动脚本
+# Github Translator 项目快速启动脚本
 
-echo "🚀 GitHub Global - 快速启动脚本"
+echo "🚀 Github Translator - 快速启动脚本"
 echo "================================="
 echo ""
 
@@ -47,7 +47,7 @@ if [ ! -f .env ]; then
     
     cat > .env << 'EOF'
 # 数据库
-DATABASE_URL="mysql://root:password@localhost:3306/github_global"
+DATABASE_URL="mysql://root:password@localhost:3306/github_translator"
 
 # NextAuth
 NEXTAUTH_URL="http://localhost:3000"

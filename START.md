@@ -1,4 +1,4 @@
-# 🚀 GitHub Global - 立即开始
+# 🚀 Github Translator - 立即开始
 
 ## 最快启动方式 (3 步)
 
@@ -21,7 +21,7 @@ cp .env.example .env
 
 \`\`\`env
 # 数据库
-DATABASE_URL="mysql://root:password@localhost:3306/github_global"
+DATABASE_URL="mysql://root:password@localhost:3306/github_translator"
 
 # NextAuth
 NEXTAUTH_URL="http://localhost:3000"
@@ -210,7 +210,7 @@ docker-compose down
 ### 数据库
 
 - 需要 MySQL 8.0+
-- 确保数据库已创建: \`github_global\`
+- 确保数据库已创建: \`github_translator\`
 
 ### GitHub App
 

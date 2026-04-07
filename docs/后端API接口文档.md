@@ -1,4 +1,4 @@
-# GitHub Global - 后端 API 接口文档
+# Github Translator - 后端 API 接口文档
 
 > 版本：v1.0.0  
 > 日期：2026-01-21  

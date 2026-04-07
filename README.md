@@ -26,7 +26,7 @@
 
 既然如此，**不如做一个更通用的工具**。
 
-这就是 GitHub Global 项目的起点：输入任意一个 GitHub 仓库地址，AI 自动将文档翻译成多种语言，并在基准语言内容发生变更时，**自动增量同步翻译**，生成 PR 等待仓库负责人合并，全程无需人工干预。
+这就是 Github Translator 项目的起点：输入任意一个 GitHub 仓库地址，AI 自动将文档翻译成多种语言，并在基准语言内容发生变更时，**自动增量同步翻译**，生成 PR 等待仓库负责人合并，全程无需人工干预。
 
 零配置，一键翻译，让你的 GitHub 项目走向全球！
 
@@ -166,7 +166,7 @@ cp .env.example .env.local
 编辑 `.env` 和 `.env.local`，填入你的配置：
 
 ```bash
-DATABASE_URL=mysql://root:你的密码@localhost:3306/github_global
+DATABASE_URL=mysql://root:你的密码@localhost:3306/github_translator
 NEXTAUTH_URL=http://localhost:3123
 AUTH_SECRET=随机字符串至少32位
 GITHUB_APP_ID=你的AppID
@@ -182,7 +182,7 @@ PLATFORM_OPENROUTER_API_KEY=sk-or-v1-你的key
 
 ```bash
 # 创建数据库（MySQL 命令行）
-mysql -u root -p -e "CREATE DATABASE github_global CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p -e "CREATE DATABASE github_translator CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 生成 Prisma 客户端 + 建表
 npx prisma generate
