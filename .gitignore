@@ -42,6 +42,7 @@ prisma/migrations
 /generated/prisma
 
 # IDE
+.cursor
 .vscode
 .idea
 *.swp
