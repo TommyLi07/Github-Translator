@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function SetupPage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -30,8 +30,18 @@ export default function SetupPage() {
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const installWindowRef = useRef<Window | null>(null);
 
+  // 停止轮询
+  function stopPolling() {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+    setIsWaitingForInstall(false);
+    setPollCount(0);
+  }
+
   // 检查是否已安装 GitHub App（静默模式，不显示加载状态）
-  const checkInstallationSilent = useCallback(async (): Promise<boolean> => {
+  async function checkInstallationSilent(): Promise<boolean> {
     try {
       const response = await fetch("/api/github/installations");
 
@@ -49,10 +59,10 @@ export default function SetupPage() {
       console.error("Check installation error:", err);
       return false;
     }
-  }, [router]);
+  }
 
   // 检查是否已安装 GitHub App（带加载状态）
-  const checkInstallation = useCallback(async () => {
+  async function checkInstallation() {
     try {
       setIsChecking(true);
       setError(null);
@@ -71,9 +81,7 @@ export default function SetupPage() {
 
       if (data.totalCount > 0) {
         setHasInstallation(true);
-        // 停止轮询
         stopPolling();
-        // 安装成功，跳转到控制台
         setTimeout(() => {
           router.push("/dashboard");
         }, 1500);
@@ -86,66 +94,49 @@ export default function SetupPage() {
     } finally {
       setIsChecking(false);
     }
-  }, [router]);
-
-  // 停止轮询
-  const stopPolling = useCallback(() => {
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
-    }
-    setIsWaitingForInstall(false);
-    setPollCount(0);
-  }, []);
+  }
 
   // 开始轮询检查安装状态
-  const startPolling = useCallback(() => {
-    // 如果已经在轮询，先停止
+  function startPolling() {
     stopPolling();
 
     setIsWaitingForInstall(true);
     setPollCount(0);
 
-    // 每 3 秒检查一次安装状态
     pollIntervalRef.current = setInterval(async () => {
       setPollCount((prev) => prev + 1);
 
       const installed = await checkInstallationSilent();
 
       if (installed) {
-        // 安装成功！
         stopPolling();
         setHasInstallation(true);
 
-        // 尝试关闭安装窗口（可能因为跨域被阻止）
         try {
           if (installWindowRef.current && !installWindowRef.current.closed) {
             installWindowRef.current.close();
           }
-        } catch (e) {
+        } catch {
           // 忽略跨域错误
         }
 
-        // 跳转到控制台
         setTimeout(() => {
           router.push("/dashboard");
         }, 1500);
       }
     }, 3000);
 
-    // 最多轮询 2 分钟（40 次）
     setTimeout(() => {
       if (pollIntervalRef.current) {
         stopPolling();
       }
     }, 120000);
-  }, [checkInstallationSilent, stopPolling, router]);
+  }
 
   // 在新窗口打开 GitHub App 安装页面
-  const openInstallWindow = useCallback(() => {
+  function openInstallWindow() {
     if (!installUrl) return;
 
-    // 在新窗口打开 GitHub App 安装页面
     const width = 1000;
     const height = 700;
     const left = (window.screen.width - width) / 2;
@@ -157,9 +148,8 @@ export default function SetupPage() {
       `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=yes,status=no`,
     );
 
-    // 开始轮询检查安装状态
     startPolling();
-  }, [installUrl, startPolling]);
+  }
 
   // 获取安装 URL
   useEffect(() => {
