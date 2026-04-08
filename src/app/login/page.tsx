@@ -103,7 +103,7 @@ function LoginContent() {
 					<CardContent className='space-y-4'>
 						{error && (
 							<div className='flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20'>
-								<AlertCircle className='h-5 w-5 text-destructive flex-shrink-0 mt-0.5' />
+								<AlertCircle className='h-5 w-5 text-destructive shrink-0 mt-0.5' />
 								<div>
 									<p className='text-sm text-destructive font-medium'>
 										登录失败

@@ -384,19 +384,19 @@ export default function SetupPage() {
 							</p>
 							<ul className='space-y-2 text-sm'>
 								<li className='flex items-start gap-2'>
-									<CheckCircle2 className='h-5 w-5 text-green-500 flex-shrink-0 mt-0.5' />
+									<CheckCircle2 className='h-5 w-5 text-green-500 shrink-0 mt-0.5' />
 									<div>
 										<strong>更细粒度的权限控制</strong> - 只请求必要的权限
 									</div>
 								</li>
 								<li className='flex items-start gap-2'>
-									<CheckCircle2 className='h-5 w-5 text-green-500 flex-shrink-0 mt-0.5' />
+									<CheckCircle2 className='h-5 w-5 text-green-500 shrink-0 mt-0.5' />
 									<div>
 										<strong>更高的安全性</strong> - Token 自动过期，降低泄露风险
 									</div>
 								</li>
 								<li className='flex items-start gap-2'>
-									<CheckCircle2 className='h-5 w-5 text-green-500 flex-shrink-0 mt-0.5' />
+									<CheckCircle2 className='h-5 w-5 text-green-500 shrink-0 mt-0.5' />
 									<div>
 										<strong>选择性授权</strong> - 你可以选择授权哪些仓库
 									</div>
