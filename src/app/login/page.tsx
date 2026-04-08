@@ -1,5 +1,6 @@
 "use client";
 
+import { GitHubMark } from "@/components/icons/github-mark";
 import { Footer, Navbar } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AlertCircle, Github, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -126,7 +127,7 @@ function LoginContent() {
                 </>
               ) : (
                 <>
-                  <Github className="mr-2 h-5 w-5" />
+                  <GitHubMark className="mr-2 h-5 w-5" />
                   使用 GitHub 登录
                 </>
               )}

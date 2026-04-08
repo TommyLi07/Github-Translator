@@ -1,8 +1,8 @@
 // 仓库详情 API
 
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/repos/:id - 获取仓库详情

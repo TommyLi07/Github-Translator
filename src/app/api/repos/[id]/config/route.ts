@@ -1,17 +1,18 @@
 // 仓库配置 API
 
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { decrypt } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
 import { getInstallationOctokit, getUserOctokit } from "@/lib/github/client";
 import {
   createWebhook,
   deleteWebhook,
-  getWebhookUrl,
   getWebhookSecret,
+  getWebhookUrl,
 } from "@/lib/github/webhook";
-import { decrypt } from "@/lib/crypto";
 import { UpdateRepoConfigRequest } from "@/types";
+import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "../../../../../../generated/prisma/client";
 
 /**
  * PUT /api/repos/:id/config - 更新仓库配置
@@ -164,8 +165,12 @@ export async function PUT(
       update: {
         ...(baseLanguage && { baseLanguage }),
         ...(targetLanguages && { targetLanguages }),
-        ...(includePaths !== undefined && { includePaths }),
-        ...(excludePaths !== undefined && { excludePaths }),
+        ...(includePaths !== undefined && {
+          includePaths: includePaths === null ? Prisma.DbNull : includePaths,
+        }),
+        ...(excludePaths !== undefined && {
+          excludePaths: excludePaths === null ? Prisma.DbNull : excludePaths,
+        }),
         ...(aiModel !== undefined && { aiModel }),
         ...(autoTranslate !== undefined && { autoTranslate }),
         ...(webhookId !== undefined && { webhookId }),
@@ -174,8 +179,8 @@ export async function PUT(
         repositoryId: id,
         baseLanguage: baseLanguage || "zh-CN",
         targetLanguages: targetLanguages || ["en"],
-        includePaths: includePaths || null,
-        excludePaths: excludePaths || null,
+        includePaths: includePaths != null ? includePaths : Prisma.DbNull,
+        excludePaths: excludePaths != null ? excludePaths : Prisma.DbNull,
         aiModel: aiModel || null,
         autoTranslate: autoTranslate || false,
         webhookId: webhookId || null,

@@ -17,8 +17,11 @@ import { translateWithFallback } from "@/lib/openrouter/fallback";
 import { getTranslatedPath } from "@/lib/translation/filename-translator";
 import { insertLanguageLinks } from "@/lib/translation/readme-updater";
 import { FileTreeNode } from "@/types";
-import { FileStatus, TranslationStatus } from "@prisma/client";
 import { Octokit } from "octokit";
+import {
+  FileStatus,
+  TranslationStatus,
+} from "../../../generated/prisma/client";
 
 export interface TranslationOptions {
   taskId: string;
