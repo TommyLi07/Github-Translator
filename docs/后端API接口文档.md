@@ -28,6 +28,7 @@ GET /api/repos
 ```
 
 **响应示例**:
+
 ```json
 {
   "repos": [
@@ -59,6 +60,7 @@ POST /api/repos
 ```
 
 **请求体**:
+
 ```json
 {
   "repoUrl": "https://github.com/username/repo-name"
@@ -66,6 +68,7 @@ POST /api/repos
 ```
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -87,6 +90,7 @@ GET /api/repos/:id
 ```
 
 **响应示例**:
+
 ```json
 {
   "id": "repo_123",
@@ -123,6 +127,7 @@ PUT /api/repos/:id/config
 ```
 
 **请求体**:
+
 ```json
 {
   "baseLanguage": "zh-CN",
@@ -134,6 +139,7 @@ PUT /api/repos/:id/config
 ```
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -153,6 +159,7 @@ GET /api/repos/:id/files
 ```
 
 **响应示例**:
+
 ```json
 {
   "tree": [
@@ -190,6 +197,7 @@ POST /api/translations
 ```
 
 **请求体**:
+
 ```json
 {
   "repositoryId": "repo_123",
@@ -201,6 +209,7 @@ POST /api/translations
 - `type`: `"FULL"` (全量翻译) 或 `"INCREMENTAL"` (增量翻译)
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -209,11 +218,13 @@ POST /api/translations
 ```
 
 **错误响应** (限流):
+
 ```json
 {
   "error": "Daily limit exceeded. Please try again tomorrow or add your own API key."
 }
 ```
+
 状态码: `429`
 
 ---
@@ -225,6 +236,7 @@ GET /api/translations/:id
 ```
 
 **响应示例**:
+
 ```json
 {
   "id": "task_123",
@@ -259,6 +271,7 @@ GET /api/translations/:id
 ```
 
 **状态枚举**:
+
 - `PENDING`: 等待中
 - `RUNNING`: 运行中
 - `COMPLETED`: 已完成
@@ -276,6 +289,7 @@ GET /api/translations/:id/progress
 **响应类型**: `text/event-stream`
 
 **事件数据格式**:
+
 ```json
 {
   "status": "RUNNING",
@@ -296,14 +310,15 @@ GET /api/translations/:id/progress
 ```
 
 **前端使用示例**:
+
 ```javascript
-const eventSource = new EventSource('/api/translations/task_123/progress');
+const eventSource = new EventSource("/api/translations/task_123/progress");
 
 eventSource.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  console.log('进度:', data.progress);
-  
-  if (['COMPLETED', 'FAILED', 'CANCELLED'].includes(data.status)) {
+  console.log("进度:", data.progress);
+
+  if (["COMPLETED", "FAILED", "CANCELLED"].includes(data.status)) {
     eventSource.close();
   }
 };
@@ -320,6 +335,7 @@ POST /api/settings/api-key
 ```
 
 **请求体**:
+
 ```json
 {
   "provider": "openrouter",
@@ -328,6 +344,7 @@ POST /api/settings/api-key
 ```
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -344,6 +361,7 @@ DELETE /api/settings/api-key/:id
 ```
 
 **响应示例**:
+
 ```json
 {
   "success": true
@@ -359,6 +377,7 @@ GET /api/settings/usage
 ```
 
 **响应示例**:
+
 ```json
 {
   "today": {
@@ -381,12 +400,17 @@ GET /api/constants/languages
 ```
 
 **响应示例**:
+
 ```json
 {
   "languages": [
     { "code": "en", "name": "英语", "nativeName": "English" },
     { "code": "zh-CN", "name": "简体中文", "nativeName": "Simplified Chinese" },
-    { "code": "zh-TW", "name": "繁体中文", "nativeName": "Traditional Chinese" },
+    {
+      "code": "zh-TW",
+      "name": "繁体中文",
+      "nativeName": "Traditional Chinese"
+    },
     { "code": "ja", "name": "日语", "nativeName": "Japanese" },
     { "code": "ko", "name": "韩语", "nativeName": "Korean" },
     { "code": "es", "name": "西班牙语", "nativeName": "Spanish" },
@@ -407,6 +431,7 @@ GET /api/constants/models
 ```
 
 **响应示例**:
+
 ```json
 {
   "models": [
@@ -445,6 +470,7 @@ GET /api/constants/models
 ```
 
 **常见状态码**:
+
 - `401`: 未授权 (需要登录)
 - `403`: 禁止访问 (权限不足)
 - `404`: 资源不存在
@@ -458,6 +484,7 @@ GET /api/constants/models
 所有 API 接口 (除了认证接口) 都需要用户登录状态。
 
 **前端需要**:
+
 1. 使用 NextAuth.js 的 `useSession()` Hook 获取会话
 2. 请求时自动携带 Session Cookie
 3. 如果返回 `401`,重定向到登录页面
@@ -467,9 +494,11 @@ GET /api/constants/models
 ## 8. 限流规则
 
 **免费用户限制**:
+
 - 每日翻译任务数: 10 次
 - 每次最多翻译文件数: 5 个
 - 每个文件最大字符数: 50,000
 
 **自带 API Key 用户**:
+
 - 无平台限制,仅受 OpenRouter 限制

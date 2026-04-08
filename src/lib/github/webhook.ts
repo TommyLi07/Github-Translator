@@ -1,7 +1,7 @@
 // GitHub Webhook 管理模块
 
-import { Octokit } from 'octokit';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { Octokit } from "octokit";
+import { createHmac, timingSafeEqual } from "crypto";
 
 /**
  * Webhook 配置
@@ -20,16 +20,16 @@ export async function createWebhook(
   octokit: Octokit,
   owner: string,
   repo: string,
-  config: WebhookConfig
+  config: WebhookConfig,
 ): Promise<number> {
   const { data } = await octokit.rest.repos.createWebhook({
     owner,
     repo,
     config: {
       url: config.url,
-      content_type: 'json',
+      content_type: "json",
       secret: config.secret,
-      insecure_ssl: '0',
+      insecure_ssl: "0",
     },
     events: config.events,
     active: true,
@@ -46,7 +46,7 @@ export async function deleteWebhook(
   octokit: Octokit,
   owner: string,
   repo: string,
-  hookId: number
+  hookId: number,
 ): Promise<void> {
   try {
     await octokit.rest.repos.deleteWebhook({
@@ -72,7 +72,7 @@ export async function webhookExists(
   octokit: Octokit,
   owner: string,
   repo: string,
-  hookId: number
+  hookId: number,
 ): Promise<boolean> {
   try {
     await octokit.rest.repos.getWebhook({
@@ -98,14 +98,14 @@ export async function webhookExists(
 export function verifyWebhookSignature(
   payload: string,
   signature: string,
-  secret: string
+  secret: string,
 ): boolean {
-  if (!signature || !signature.startsWith('sha256=')) {
+  if (!signature || !signature.startsWith("sha256=")) {
     return false;
   }
 
-  const hmac = createHmac('sha256', secret);
-  const digest = 'sha256=' + hmac.update(payload).digest('hex');
+  const hmac = createHmac("sha256", secret);
+  const digest = "sha256=" + hmac.update(payload).digest("hex");
 
   // 使用 timing-safe comparison 防止时序攻击
   try {
@@ -119,7 +119,7 @@ export function verifyWebhookSignature(
  * 获取 Webhook URL（基于当前环境）
  */
 export function getWebhookUrl(): string {
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3123';
+  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3123";
   return `${baseUrl}/api/webhooks/github`;
 }
 
@@ -129,7 +129,7 @@ export function getWebhookUrl(): string {
 export function getWebhookSecret(): string {
   const secret = process.env.GITHUB_WEBHOOK_SECRET;
   if (!secret) {
-    throw new Error('GITHUB_WEBHOOK_SECRET not configured');
+    throw new Error("GITHUB_WEBHOOK_SECRET not configured");
   }
   return secret;
 }

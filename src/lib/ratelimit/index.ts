@@ -1,7 +1,7 @@
 // 限流模块
 
-import { prisma } from '@/lib/db';
-import { RATE_LIMIT_CONFIG } from '@/config/constants';
+import { prisma } from "@/lib/db";
+import { RATE_LIMIT_CONFIG } from "@/config/constants";
 
 /**
  * 检查用户是否达到限流
@@ -11,7 +11,7 @@ export async function checkRateLimit(userId: string): Promise<boolean> {
   const hasApiKey = await prisma.apiKey.findFirst({
     where: {
       userId,
-      provider: 'openrouter',
+      provider: "openrouter",
       isActive: true,
     },
   });
@@ -22,7 +22,7 @@ export async function checkRateLimit(userId: string): Promise<boolean> {
   }
 
   // 检查今日使用量
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
   const usage = await prisma.userUsage.findFirst({
     where: {
       userId,
@@ -37,7 +37,7 @@ export async function checkRateLimit(userId: string): Promise<boolean> {
  * 增加用户使用量
  */
 export async function incrementUsage(userId: string): Promise<void> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
   await prisma.userUsage.upsert({
     where: {
@@ -62,13 +62,15 @@ export async function incrementUsage(userId: string): Promise<void> {
 /**
  * 获取用户今日使用量
  */
-export async function getUserUsage(userId: string): Promise<{ count: number; limit: number; hasApiKey: boolean }> {
-  const today = new Date().toISOString().split('T')[0];
+export async function getUserUsage(
+  userId: string,
+): Promise<{ count: number; limit: number; hasApiKey: boolean }> {
+  const today = new Date().toISOString().split("T")[0];
 
   const hasApiKey = await prisma.apiKey.findFirst({
     where: {
       userId,
-      provider: 'openrouter',
+      provider: "openrouter",
       isActive: true,
     },
   });

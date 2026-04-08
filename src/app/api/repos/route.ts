@@ -1,11 +1,11 @@
 // 仓库管理 API - 列表和导入
 
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import { prisma } from '@/lib/db';
-import { getUserOctokit } from '@/lib/github/client';
-import { getRepository } from '@/lib/github/operations';
-import { decrypt } from '@/lib/crypto';
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
+import { getUserOctokit } from "@/lib/github/client";
+import { getRepository } from "@/lib/github/operations";
+import { decrypt } from "@/lib/crypto";
 
 /**
  * GET /api/repos - 获取用户仓库列表
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const repos = await prisma.repository.findMany({
@@ -22,19 +22,19 @@ export async function GET(request: NextRequest) {
       include: {
         config: true,
         translationTasks: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           take: 1,
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({ repos });
   } catch (error) {
-    console.error('Get repos error:', error);
+    console.error("Get repos error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
@@ -46,30 +46,27 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
     const { repoUrl } = body;
 
     if (!repoUrl) {
-      return NextResponse.json(
-        { error: 'Missing repoUrl' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing repoUrl" }, { status: 400 });
     }
 
     // 解析仓库 URL
     const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
     if (!match) {
       return NextResponse.json(
-        { error: 'Invalid GitHub repository URL' },
-        { status: 400 }
+        { error: "Invalid GitHub repository URL" },
+        { status: 400 },
       );
     }
 
     const [, owner, repoName] = match;
-    const cleanRepoName = repoName.replace(/\.git$/, '');
+    const cleanRepoName = repoName.replace(/\.git$/, "");
 
     // 获取用户的 GitHub token
     const user = await prisma.user.findUnique({
@@ -78,8 +75,8 @@ export async function POST(request: NextRequest) {
 
     if (!user || !user.accessToken) {
       return NextResponse.json(
-        { error: 'GitHub access token not found' },
-        { status: 400 }
+        { error: "GitHub access token not found" },
+        { status: 400 },
       );
     }
 
@@ -96,8 +93,8 @@ export async function POST(request: NextRequest) {
 
     if (existing) {
       return NextResponse.json(
-        { error: 'Repository already imported' },
-        { status: 409 }
+        { error: "Repository already imported" },
+        { status: 409 },
       );
     }
 
@@ -119,8 +116,8 @@ export async function POST(request: NextRequest) {
     await prisma.repoConfig.create({
       data: {
         repositoryId: repository.id,
-        baseLanguage: 'zh-CN',
-        targetLanguages: ['en'],
+        baseLanguage: "zh-CN",
+        targetLanguages: ["en"],
       },
     });
 
@@ -134,18 +131,18 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('Import repo error:', error);
-    
+    console.error("Import repo error:", error);
+
     if (error.status === 404) {
       return NextResponse.json(
-        { error: 'Repository not found or no access' },
-        { status: 404 }
+        { error: "Repository not found or no access" },
+        { status: 404 },
       );
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }

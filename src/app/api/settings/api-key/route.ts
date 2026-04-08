@@ -1,9 +1,9 @@
 // 用户 API Key 设置
 
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import { prisma } from '@/lib/db';
-import { encrypt } from '@/lib/crypto';
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
+import { encrypt } from "@/lib/crypto";
 
 /**
  * POST /api/settings/api-key - 保存 API Key 和默认模型
@@ -12,17 +12,14 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
-    const { provider = 'openrouter', apiKey, defaultModel } = body;
+    const { provider = "openrouter", apiKey, defaultModel } = body;
 
     if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Missing apiKey' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing apiKey" }, { status: 400 });
     }
 
     // 加密 API Key
@@ -52,13 +49,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'API Key saved successfully',
+      message: "API Key saved successfully",
     });
   } catch (error) {
-    console.error('Save API key error:', error);
+    console.error("Save API key error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
@@ -70,7 +67,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const apiKeys = await prisma.apiKey.findMany({
@@ -81,20 +78,20 @@ export async function GET(request: NextRequest) {
         id: true,
         provider: true,
         isActive: true,
-        defaultModel: true,  // 返回默认模型
+        defaultModel: true, // 返回默认模型
         createdAt: true,
         updatedAt: true,
         // 不返回加密的 key
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({ apiKeys });
   } catch (error) {
-    console.error('Get API keys error:', error);
+    console.error("Get API keys error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
@@ -106,7 +103,7 @@ export async function PUT(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -116,7 +113,7 @@ export async function PUT(request: NextRequest) {
     const result = await prisma.apiKey.updateMany({
       where: {
         userId: session.user.id,
-        provider: 'openrouter',
+        provider: "openrouter",
         isActive: true,
       },
       data: {
@@ -126,20 +123,20 @@ export async function PUT(request: NextRequest) {
 
     if (result.count === 0) {
       return NextResponse.json(
-        { error: 'No active API Key found' },
-        { status: 404 }
+        { error: "No active API Key found" },
+        { status: 404 },
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Default model updated successfully',
+      message: "Default model updated successfully",
     });
   } catch (error) {
-    console.error('Update default model error:', error);
+    console.error("Update default model error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }

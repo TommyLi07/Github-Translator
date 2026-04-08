@@ -7,7 +7,7 @@
  */
 export function encrypt(plaintext: string): string {
   // 使用 Base64 编码（简化版，便于快速开发）
-  return Buffer.from(plaintext, 'utf-8').toString('base64');
+  return Buffer.from(plaintext, "utf-8").toString("base64");
 }
 
 /**
@@ -17,5 +17,5 @@ export function encrypt(plaintext: string): string {
  */
 export function decrypt(encoded: string): string {
   // 使用 Base64 解码
-  return Buffer.from(encoded, 'base64').toString('utf-8');
+  return Buffer.from(encoded, "base64").toString("utf-8");
 }

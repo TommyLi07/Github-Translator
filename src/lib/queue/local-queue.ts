@@ -1,11 +1,11 @@
 // 本地任务队列实现
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from "events";
 
 export interface Job<T> {
   id: string;
   data: T;
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  status: "pending" | "running" | "completed" | "failed";
   result?: any;
   error?: Error;
   createdAt: Date;
@@ -34,7 +34,7 @@ export class LocalQueue<T> extends EventEmitter {
     const job: Job<T> = {
       id,
       data,
-      status: 'pending',
+      status: "pending",
       createdAt: new Date(),
     };
 
@@ -57,24 +57,24 @@ export class LocalQueue<T> extends EventEmitter {
     if (!job) return;
 
     this.running++;
-    job.status = 'running';
+    job.status = "running";
     job.startedAt = new Date();
-    this.emit('active', job);
+    this.emit("active", job);
 
     try {
       if (!this.processor) {
-        throw new Error('No processor set for queue');
+        throw new Error("No processor set for queue");
       }
 
       job.result = await this.processor(job.data);
-      job.status = 'completed';
+      job.status = "completed";
       job.completedAt = new Date();
-      this.emit('completed', job);
+      this.emit("completed", job);
     } catch (error) {
-      job.status = 'failed';
+      job.status = "failed";
       job.error = error as Error;
       job.completedAt = new Date();
-      this.emit('failed', job, error);
+      this.emit("failed", job, error);
     } finally {
       this.running--;
       this.process();

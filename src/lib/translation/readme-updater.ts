@@ -1,19 +1,19 @@
 // README 多语言链接生成和插入
 
-import { LANGUAGE_NAMES } from '@/config/constants';
+import { LANGUAGE_NAMES } from "@/config/constants";
 
 /**
  * 生成多语言切换链接
  */
 export function generateLanguageLinks(languages: string[]): string {
-  const links = languages.map(lang => {
+  const links = languages.map((lang) => {
     const name = LANGUAGE_NAMES[lang] || lang;
     return `[${name}](./translations/${lang}/README.md)`;
   });
 
   return `## 🌐 Translations
 
-${links.join(' | ')}
+${links.join(" | ")}
 
 ---
 
@@ -24,7 +24,7 @@ ${links.join(' | ')}
  * 查找插入位置
  */
 export function findInsertPosition(content: string): number {
-  const lines = content.split('\n');
+  const lines = content.split("\n");
 
   // 策略1: 如果已有语言切换区域，返回其位置
   for (let i = 0; i < lines.length; i++) {
@@ -47,7 +47,7 @@ export function findInsertPosition(content: string): number {
       foundTitle = true;
       continue;
     }
-    if (foundTitle && lines[i].trim() === '' && i + 1 < lines.length) {
+    if (foundTitle && lines[i].trim() === "" && i + 1 < lines.length) {
       return i + 1;
     }
   }
@@ -59,9 +59,12 @@ export function findInsertPosition(content: string): number {
 /**
  * 插入多语言链接到 README
  */
-export function insertLanguageLinks(content: string, languages: string[]): string {
+export function insertLanguageLinks(
+  content: string,
+  languages: string[],
+): string {
   const links = generateLanguageLinks(languages);
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   const position = findInsertPosition(content);
 
   // 如果存在旧的语言链接区域，先删除
@@ -73,7 +76,7 @@ export function insertLanguageLinks(content: string, languages: string[]): strin
       skipUntilSeparator = true;
       continue;
     }
-    if (skipUntilSeparator && lines[i].trim() === '---') {
+    if (skipUntilSeparator && lines[i].trim() === "---") {
       skipUntilSeparator = false;
       continue;
     }
@@ -85,5 +88,5 @@ export function insertLanguageLinks(content: string, languages: string[]): strin
   // 插入新的语言链接
   cleanedLines.splice(position, 0, links);
 
-  return cleanedLines.join('\n');
+  return cleanedLines.join("\n");
 }

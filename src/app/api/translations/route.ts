@@ -1,12 +1,12 @@
 // 翻译任务 API - 创建任务
 
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import { prisma } from '@/lib/db';
-import { checkRateLimit, incrementUsage } from '@/lib/ratelimit';
-import { translationQueue } from '@/lib/queue/local-queue';
-import { executeTranslation } from '@/lib/translation/engine';
-import { CreateTranslationTaskRequest } from '@/types';
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
+import { checkRateLimit, incrementUsage } from "@/lib/ratelimit";
+import { translationQueue } from "@/lib/queue/local-queue";
+import { executeTranslation } from "@/lib/translation/engine";
+import { CreateTranslationTaskRequest } from "@/types";
 
 // 初始化队列处理器
 translationQueue.setProcessor(async (data) => {
@@ -21,18 +21,18 @@ export async function POST(request: NextRequest) {
     // 1. 验证用户身份
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // 2. 解析请求体
     const body: CreateTranslationTaskRequest = await request.json();
-    const { repositoryId, targetLanguages, type = 'FULL' } = body;
+    const { repositoryId, targetLanguages, type = "FULL" } = body;
 
     // 3. 验证参数
     if (!repositoryId || !targetLanguages?.length) {
       return NextResponse.json(
-        { error: 'Missing required fields: repositoryId and targetLanguages' },
-        { status: 400 }
+        { error: "Missing required fields: repositoryId and targetLanguages" },
+        { status: 400 },
       );
     }
 
@@ -40,8 +40,11 @@ export async function POST(request: NextRequest) {
     const canProceed = await checkRateLimit(session.user.id);
     if (!canProceed) {
       return NextResponse.json(
-        { error: 'Daily limit exceeded. Please try again tomorrow or add your own API key.' },
-        { status: 429 }
+        {
+          error:
+            "Daily limit exceeded. Please try again tomorrow or add your own API key.",
+        },
+        { status: 429 },
       );
     }
 
@@ -55,8 +58,8 @@ export async function POST(request: NextRequest) {
 
     if (!repository) {
       return NextResponse.json(
-        { error: 'Repository not found' },
-        { status: 404 }
+        { error: "Repository not found" },
+        { status: 404 },
       );
     }
 
@@ -86,10 +89,10 @@ export async function POST(request: NextRequest) {
       taskId: task.id,
     });
   } catch (error) {
-    console.error('Create translation task error:', error);
+    console.error("Create translation task error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }

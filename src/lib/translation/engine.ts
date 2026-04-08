@@ -1,72 +1,72 @@
 // 翻译引擎核心模块
 
-import { decrypt } from '@/lib/crypto';
-import { prisma } from '@/lib/db';
-import { getInstallationOctokit, getUserOctokit } from '@/lib/github/client';
+import { decrypt } from "@/lib/crypto";
+import { prisma } from "@/lib/db";
+import { getInstallationOctokit, getUserOctokit } from "@/lib/github/client";
 import {
-	createBranch,
-	createOrUpdateFile,
-	createPullRequest,
-	fileExists,
-	getFileContent,
-	getFileContentWithSha,
-	getFileSha,
-	getFileTree,
-} from '@/lib/github/operations';
-import { translateWithFallback } from '@/lib/openrouter/fallback';
-import { getTranslatedPath } from '@/lib/translation/filename-translator';
-import { insertLanguageLinks } from '@/lib/translation/readme-updater';
-import { FileTreeNode } from '@/types';
-import { FileStatus, TranslationStatus } from '@prisma/client';
-import { Octokit } from 'octokit';
+  createBranch,
+  createOrUpdateFile,
+  createPullRequest,
+  fileExists,
+  getFileContent,
+  getFileContentWithSha,
+  getFileSha,
+  getFileTree,
+} from "@/lib/github/operations";
+import { translateWithFallback } from "@/lib/openrouter/fallback";
+import { getTranslatedPath } from "@/lib/translation/filename-translator";
+import { insertLanguageLinks } from "@/lib/translation/readme-updater";
+import { FileTreeNode } from "@/types";
+import { FileStatus, TranslationStatus } from "@prisma/client";
+import { Octokit } from "octokit";
 
 export interface TranslationOptions {
-	taskId: string;
-	userId: string;
-	repositoryId: string;
-	targetLanguages: string[];
+  taskId: string;
+  userId: string;
+  repositoryId: string;
+  targetLanguages: string[];
 }
 
 export interface IncrementalTranslationOptions extends TranslationOptions {
-	type: 'INCREMENTAL';
-	changedFiles: string[]; // 变更的文件列表
+  type: "INCREMENTAL";
+  changedFiles: string[]; // 变更的文件列表
 }
 
 /**
  * 获取用户的 API Key 和默认模型（优先用户自带，否则使用平台托管）
  */
 async function getApiKeyAndModelForUser(
-	userId: string,
+  userId: string,
 ): Promise<{ apiKey: string; defaultModel: string | null }> {
-	// 1. 优先查找用户自带的 API Key
-	const userApiKey = await prisma.apiKey.findFirst({
-		where: { userId, provider: 'openrouter', isActive: true },
-		select: {
-			encryptedKey: true,
-			defaultModel: true,
-		},
-	});
+  // 1. 优先查找用户自带的 API Key
+  const userApiKey = await prisma.apiKey.findFirst({
+    where: { userId, provider: "openrouter", isActive: true },
+    select: {
+      encryptedKey: true,
+      defaultModel: true,
+    },
+  });
 
-	if (userApiKey) {
-		return {
-			apiKey: decrypt(userApiKey.encryptedKey),
-			defaultModel: userApiKey.defaultModel,
-		};
-	}
+  if (userApiKey) {
+    return {
+      apiKey: decrypt(userApiKey.encryptedKey),
+      defaultModel: userApiKey.defaultModel,
+    };
+  }
 
-	// 2. 使用平台托管的 API Key
-	const platformApiKey = process.env.PLATFORM_OPENROUTER_API_KEY;
+  // 2. 使用平台托管的 API Key
+  const platformApiKey = process.env.PLATFORM_OPENROUTER_API_KEY;
 
-	if (!platformApiKey) {
-		throw new Error(
-			'No API key available. Please add your OpenRouter API key in settings.',
-		);
-	}
+  if (!platformApiKey) {
+    throw new Error(
+      "No API key available. Please add your OpenRouter API key in settings.",
+    );
+  }
 
-	return {
-		apiKey: platformApiKey,
-		defaultModel: null,
-	};
+  return {
+    apiKey: platformApiKey,
+    defaultModel: null,
+  };
 }
 
 /**
@@ -74,74 +74,74 @@ async function getApiKeyAndModelForUser(
  * @deprecated 使用 getApiKeyAndModelForUser 代替
  */
 async function getApiKeyForUser(userId: string): Promise<string> {
-	const { apiKey } = await getApiKeyAndModelForUser(userId);
-	return apiKey;
+  const { apiKey } = await getApiKeyAndModelForUser(userId);
+  return apiKey;
 }
 
 /**
  * 获取待翻译的文件列表
  */
 async function getFilesToTranslate(
-	fileTree: FileTreeNode[],
-	includePaths?: string[],
-	excludePaths?: string[],
+  fileTree: FileTreeNode[],
+  includePaths?: string[],
+  excludePaths?: string[],
 ): Promise<string[]> {
-	const files: string[] = [];
+  const files: string[] = [];
 
-	function traverse(nodes: FileTreeNode[]) {
-		for (const node of nodes) {
-			if (node.type === 'file' && node.isMarkdown) {
-				// 检查是否在排除路径中
-				if (excludePaths?.some((pattern) => matchPath(node.path, pattern))) {
-					continue;
-				}
+  function traverse(nodes: FileTreeNode[]) {
+    for (const node of nodes) {
+      if (node.type === "file" && node.isMarkdown) {
+        // 检查是否在排除路径中
+        if (excludePaths?.some((pattern) => matchPath(node.path, pattern))) {
+          continue;
+        }
 
-				// 如果指定了包含路径，检查是否匹配
-				if (includePaths && includePaths.length > 0) {
-					if (includePaths.some((pattern) => matchPath(node.path, pattern))) {
-						files.push(node.path);
-					}
-				} else {
-					files.push(node.path);
-				}
-			}
+        // 如果指定了包含路径，检查是否匹配
+        if (includePaths && includePaths.length > 0) {
+          if (includePaths.some((pattern) => matchPath(node.path, pattern))) {
+            files.push(node.path);
+          }
+        } else {
+          files.push(node.path);
+        }
+      }
 
-			if (node.children) {
-				traverse(node.children);
-			}
-		}
-	}
+      if (node.children) {
+        traverse(node.children);
+      }
+    }
+  }
 
-	traverse(fileTree);
-	return files;
+  traverse(fileTree);
+  return files;
 }
 
 /**
  * 简单的路径匹配（支持 ** 和 * 通配符）
  */
 function matchPath(path: string, pattern: string): boolean {
-	// 将 ** 替换为 .*，将 * 替换为 [^/]*
-	const regexPattern = pattern
-		.replace(/\*\*/g, '.*')
-		.replace(/\*/g, '[^/]*')
-		.replace(/\./g, '\\.');
+  // 将 ** 替换为 .*，将 * 替换为 [^/]*
+  const regexPattern = pattern
+    .replace(/\*\*/g, ".*")
+    .replace(/\*/g, "[^/]*")
+    .replace(/\./g, "\\.");
 
-	const regex = new RegExp(`^${regexPattern}$`);
-	return regex.test(path);
+  const regex = new RegExp(`^${regexPattern}$`);
+  return regex.test(path);
 }
 
 /**
  * 构建 PR 描述
  */
 function buildPRDescription(
-	targetLanguages: string[],
-	completedFiles: number,
-	failedFiles: number,
+  targetLanguages: string[],
+  completedFiles: number,
+  failedFiles: number,
 ): string {
-	return `## 🌐 Translation Summary
+  return `## 🌐 Translation Summary
 
 This PR adds translations for the following languages:
-${targetLanguages.map((lang) => `- ${lang}`).join('\n')}
+${targetLanguages.map((lang) => `- ${lang}`).join("\n")}
 
 ### Statistics
 - ✅ Completed: ${completedFiles} files
@@ -157,348 +157,348 @@ ${targetLanguages.map((lang) => `- ${lang}`).join('\n')}
  * 执行翻译任务
  */
 export async function executeTranslation(
-	options: TranslationOptions,
+  options: TranslationOptions,
 ): Promise<{ success: boolean; prUrl?: string }> {
-	const { taskId, userId, repositoryId, targetLanguages } = options;
+  const { taskId, userId, repositoryId, targetLanguages } = options;
 
-	console.log(`[Translation] Starting task ${taskId}`);
+  console.log(`[Translation] Starting task ${taskId}`);
 
-	// 更新任务状态为运行中
-	await prisma.translationTask.update({
-		where: { id: taskId },
-		data: {
-			status: TranslationStatus.RUNNING,
-			startedAt: new Date(),
-		},
-	});
+  // 更新任务状态为运行中
+  await prisma.translationTask.update({
+    where: { id: taskId },
+    data: {
+      status: TranslationStatus.RUNNING,
+      startedAt: new Date(),
+    },
+  });
 
-	try {
-		// 1. 获取仓库信息和配置
-		const repository = await prisma.repository.findUnique({
-			where: { id: repositoryId },
-			include: { config: true, user: true },
-		});
+  try {
+    // 1. 获取仓库信息和配置
+    const repository = await prisma.repository.findUnique({
+      where: { id: repositoryId },
+      include: { config: true, user: true },
+    });
 
-		if (!repository) {
-			throw new Error('Repository not found');
-		}
+    if (!repository) {
+      throw new Error("Repository not found");
+    }
 
-		console.log(`[Translation] Repository: ${repository.fullName}`);
+    console.log(`[Translation] Repository: ${repository.fullName}`);
 
-		// 2. 获取用户的 API Key 和默认模型
-		const { apiKey, defaultModel: userDefaultModel } =
-			await getApiKeyAndModelForUser(userId);
+    // 2. 获取用户的 API Key 和默认模型
+    const { apiKey, defaultModel: userDefaultModel } =
+      await getApiKeyAndModelForUser(userId);
 
-		// 3. 获取 GitHub Octokit 客户端
-		let octokit: Octokit;
+    // 3. 获取 GitHub Octokit 客户端
+    let octokit: Octokit;
 
-		if (repository.user.installationId) {
-			// 优先使用 GitHub App Installation token（推荐方式）
-			console.log(
-				'[Translation] Attempting to use GitHub App Installation ID:',
-				repository.user.installationId,
-			);
-			try {
-				octokit = await getInstallationOctokit(repository.user.installationId);
-				console.log('[Translation] Successfully authenticated with GitHub App');
-			} catch (error) {
-				console.error('[Translation] GitHub App authentication failed:', error);
-				// Fallback 到用户 token
-				if (repository.user.accessToken) {
-					console.log('[Translation] Falling back to user access token');
-					const accessToken = decrypt(repository.user.accessToken);
-					octokit = getUserOctokit(accessToken);
-				} else {
-					throw error;
-				}
-			}
-		} else if (repository.user.accessToken) {
-			// 使用用户的 OAuth access token
-			console.log('[Translation] Using user access token');
-			const accessToken = decrypt(repository.user.accessToken);
-			octokit = getUserOctokit(accessToken);
-		} else {
-			throw new Error(
-				'No authentication method available. Please install the GitHub App.',
-			);
-		}
+    if (repository.user.installationId) {
+      // 优先使用 GitHub App Installation token（推荐方式）
+      console.log(
+        "[Translation] Attempting to use GitHub App Installation ID:",
+        repository.user.installationId,
+      );
+      try {
+        octokit = await getInstallationOctokit(repository.user.installationId);
+        console.log("[Translation] Successfully authenticated with GitHub App");
+      } catch (error) {
+        console.error("[Translation] GitHub App authentication failed:", error);
+        // Fallback 到用户 token
+        if (repository.user.accessToken) {
+          console.log("[Translation] Falling back to user access token");
+          const accessToken = decrypt(repository.user.accessToken);
+          octokit = getUserOctokit(accessToken);
+        } else {
+          throw error;
+        }
+      }
+    } else if (repository.user.accessToken) {
+      // 使用用户的 OAuth access token
+      console.log("[Translation] Using user access token");
+      const accessToken = decrypt(repository.user.accessToken);
+      octokit = getUserOctokit(accessToken);
+    } else {
+      throw new Error(
+        "No authentication method available. Please install the GitHub App.",
+      );
+    }
 
-		// 4. 获取仓库文件树
-		const fileTree = await getFileTree(
-			octokit,
-			repository.owner,
-			repository.name,
-		);
+    // 4. 获取仓库文件树
+    const fileTree = await getFileTree(
+      octokit,
+      repository.owner,
+      repository.name,
+    );
 
-		// 5. 获取待翻译的文件列表
-		const includePaths = repository.config?.includePaths as
-			| string[]
-			| undefined;
-		const excludePaths = repository.config?.excludePaths as
-			| string[]
-			| undefined;
-		const filesToTranslate = await getFilesToTranslate(
-			fileTree,
-			includePaths,
-			excludePaths,
-		);
+    // 5. 获取待翻译的文件列表
+    const includePaths = repository.config?.includePaths as
+      | string[]
+      | undefined;
+    const excludePaths = repository.config?.excludePaths as
+      | string[]
+      | undefined;
+    const filesToTranslate = await getFilesToTranslate(
+      fileTree,
+      includePaths,
+      excludePaths,
+    );
 
-		console.log(
-			`[Translation] Found ${filesToTranslate.length} files to translate`,
-		);
+    console.log(
+      `[Translation] Found ${filesToTranslate.length} files to translate`,
+    );
 
-		// 6. 更新任务总文件数
-		const totalFiles = filesToTranslate.length * targetLanguages.length;
-		await prisma.translationTask.update({
-			where: { id: taskId },
-			data: { totalFiles },
-		});
+    // 6. 更新任务总文件数
+    const totalFiles = filesToTranslate.length * targetLanguages.length;
+    await prisma.translationTask.update({
+      where: { id: taskId },
+      data: { totalFiles },
+    });
 
-		// 7. 创建翻译分支
-		const branchName = `translations-${Date.now()}`;
-		const baseBranch = repository.defaultBranch;
+    // 7. 创建翻译分支
+    const branchName = `translations-${Date.now()}`;
+    const baseBranch = repository.defaultBranch;
 
-		console.log(`[Translation] Creating branch: ${branchName}`);
-		await createBranch(
-			octokit,
-			repository.owner,
-			repository.name,
-			branchName,
-			baseBranch,
-		);
+    console.log(`[Translation] Creating branch: ${branchName}`);
+    await createBranch(
+      octokit,
+      repository.owner,
+      repository.name,
+      branchName,
+      baseBranch,
+    );
 
-		// 8. 逐个翻译文件
-		let completedFiles = 0;
-		let failedFiles = 0;
-		const baseLanguage = repository.config?.baseLanguage || 'zh-CN';
+    // 8. 逐个翻译文件
+    let completedFiles = 0;
+    let failedFiles = 0;
+    const baseLanguage = repository.config?.baseLanguage || "zh-CN";
 
-		// 模型优先级：仓库配置 > 用户默认 > 系统默认 (undefined 表示使用 fallback 机制)
-		const repoAiModel = repository.config?.aiModel as string | undefined;
-		const aiModel = repoAiModel || userDefaultModel || undefined;
+    // 模型优先级：仓库配置 > 用户默认 > 系统默认 (undefined 表示使用 fallback 机制)
+    const repoAiModel = repository.config?.aiModel as string | undefined;
+    const aiModel = repoAiModel || userDefaultModel || undefined;
 
-		console.log(
-			`[Translation] Using AI model: ${aiModel || 'default (fallback)'}`,
-		);
-		if (repoAiModel) {
-			console.log('[Translation] Model source: repository config');
-		} else if (userDefaultModel) {
-			console.log('[Translation] Model source: user default');
-		} else {
-			console.log('[Translation] Model source: system default (fallback)');
-		}
+    console.log(
+      `[Translation] Using AI model: ${aiModel || "default (fallback)"}`,
+    );
+    if (repoAiModel) {
+      console.log("[Translation] Model source: repository config");
+    } else if (userDefaultModel) {
+      console.log("[Translation] Model source: user default");
+    } else {
+      console.log("[Translation] Model source: system default (fallback)");
+    }
 
-		for (const filePath of filesToTranslate) {
-			// 获取源文件内容
-			let sourceContent: string;
-			try {
-				sourceContent = await getFileContent(
-					octokit,
-					repository.owner,
-					repository.name,
-					filePath,
-					baseBranch,
-				);
-			} catch (error) {
-				console.error(`[Translation] Failed to get file ${filePath}:`, error);
-				continue;
-			}
+    for (const filePath of filesToTranslate) {
+      // 获取源文件内容
+      let sourceContent: string;
+      try {
+        sourceContent = await getFileContent(
+          octokit,
+          repository.owner,
+          repository.name,
+          filePath,
+          baseBranch,
+        );
+      } catch (error) {
+        console.error(`[Translation] Failed to get file ${filePath}:`, error);
+        continue;
+      }
 
-			for (const targetLang of targetLanguages) {
-				try {
-					// 计算翻译后的目标路径（基准语言保持原文件名，其他语言翻译为英文）
-					const targetPath = getTranslatedPath(
-						filePath,
-						targetLang,
-						baseLanguage,
-					);
+      for (const targetLang of targetLanguages) {
+        try {
+          // 计算翻译后的目标路径（基准语言保持原文件名，其他语言翻译为英文）
+          const targetPath = getTranslatedPath(
+            filePath,
+            targetLang,
+            baseLanguage,
+          );
 
-					console.log(
-						`[Translation] Translating ${filePath} to ${targetLang} -> ${targetPath}`,
-					);
+          console.log(
+            `[Translation] Translating ${filePath} to ${targetLang} -> ${targetPath}`,
+          );
 
-					// 创建翻译文件记录
-					const translatedFile = await prisma.translatedFile.create({
-						data: {
-							translationTaskId: taskId,
-							sourcePath: filePath,
-							targetPath,
-							targetLanguage: targetLang,
-							status: FileStatus.TRANSLATING,
-							sourceContent,
-						},
-					});
+          // 创建翻译文件记录
+          const translatedFile = await prisma.translatedFile.create({
+            data: {
+              translationTaskId: taskId,
+              sourcePath: filePath,
+              targetPath,
+              targetLanguage: targetLang,
+              status: FileStatus.TRANSLATING,
+              sourceContent,
+            },
+          });
 
-					// 调用 AI 翻译
-					const translatedContent = await translateWithFallback(
-						sourceContent,
-						baseLanguage,
-						targetLang,
-						apiKey,
-						aiModel,
-					);
+          // 调用 AI 翻译
+          const translatedContent = await translateWithFallback(
+            sourceContent,
+            baseLanguage,
+            targetLang,
+            apiKey,
+            aiModel,
+          );
 
-					// 检查目标文件是否已存在（可能是之前的翻译任务创建的）
-					// 如果存在，需要获取其 SHA 才能更新
-					const existingSha = await getFileSha(
-						octokit,
-						repository.owner,
-						repository.name,
-						targetPath,
-						branchName,
-					);
+          // 检查目标文件是否已存在（可能是之前的翻译任务创建的）
+          // 如果存在，需要获取其 SHA 才能更新
+          const existingSha = await getFileSha(
+            octokit,
+            repository.owner,
+            repository.name,
+            targetPath,
+            branchName,
+          );
 
-					// 写入 GitHub（使用翻译后的目标路径）
-					await createOrUpdateFile(
-						octokit,
-						repository.owner,
-						repository.name,
-						targetPath,
-						translatedContent,
-						`[Github Translator] Translate ${filePath} to ${targetLang}`,
-						branchName,
-						existingSha || undefined, // 如果文件已存在，传递 SHA；否则不传
-					);
+          // 写入 GitHub（使用翻译后的目标路径）
+          await createOrUpdateFile(
+            octokit,
+            repository.owner,
+            repository.name,
+            targetPath,
+            translatedContent,
+            `[Github Translator] Translate ${filePath} to ${targetLang}`,
+            branchName,
+            existingSha || undefined, // 如果文件已存在，传递 SHA；否则不传
+          );
 
-					// 更新文件状态
-					await prisma.translatedFile.update({
-						where: { id: translatedFile.id },
-						data: {
-							status: FileStatus.COMPLETED,
-							translatedContent,
-						},
-					});
+          // 更新文件状态
+          await prisma.translatedFile.update({
+            where: { id: translatedFile.id },
+            data: {
+              status: FileStatus.COMPLETED,
+              translatedContent,
+            },
+          });
 
-					completedFiles++;
-					console.log(`[Translation] ✓ Completed ${filePath} -> ${targetLang}`);
-				} catch (error) {
-					console.error(
-						`[Translation] ✗ Failed to translate ${filePath} to ${targetLang}:`,
-						error,
-					);
-					failedFiles++;
+          completedFiles++;
+          console.log(`[Translation] ✓ Completed ${filePath} -> ${targetLang}`);
+        } catch (error) {
+          console.error(
+            `[Translation] ✗ Failed to translate ${filePath} to ${targetLang}:`,
+            error,
+          );
+          failedFiles++;
 
-					await prisma.translatedFile.updateMany({
-						where: {
-							translationTaskId: taskId,
-							sourcePath: filePath,
-							targetLanguage: targetLang,
-						},
-						data: {
-							status: FileStatus.FAILED,
-							errorMessage: (error as Error).message,
-						},
-					});
-				}
+          await prisma.translatedFile.updateMany({
+            where: {
+              translationTaskId: taskId,
+              sourcePath: filePath,
+              targetLanguage: targetLang,
+            },
+            data: {
+              status: FileStatus.FAILED,
+              errorMessage: (error as Error).message,
+            },
+          });
+        }
 
-				// 更新进度
-				const progress = ((completedFiles + failedFiles) / totalFiles) * 100;
-				await prisma.translationTask.update({
-					where: { id: taskId },
-					data: { completedFiles, failedFiles, progress },
-				});
-			}
-		}
+        // 更新进度
+        const progress = ((completedFiles + failedFiles) / totalFiles) * 100;
+        await prisma.translationTask.update({
+          where: { id: taskId },
+          data: { completedFiles, failedFiles, progress },
+        });
+      }
+    }
 
-		// 9. 更新 README 多语言链接（如果 README.md 存在）
-		const readmePath = 'README.md';
-		const hasReadme = await fileExists(
-			octokit,
-			repository.owner,
-			repository.name,
-			readmePath,
-			baseBranch,
-		);
+    // 9. 更新 README 多语言链接（如果 README.md 存在）
+    const readmePath = "README.md";
+    const hasReadme = await fileExists(
+      octokit,
+      repository.owner,
+      repository.name,
+      readmePath,
+      baseBranch,
+    );
 
-		if (hasReadme) {
-			try {
-				console.log('[Translation] Updating README with language links');
+    if (hasReadme) {
+      try {
+        console.log("[Translation] Updating README with language links");
 
-				// 获取 README 内容和 SHA（从基准分支）
-				const readmeInfo = await getFileContentWithSha(
-					octokit,
-					repository.owner,
-					repository.name,
-					readmePath,
-					baseBranch,
-				);
+        // 获取 README 内容和 SHA（从基准分支）
+        const readmeInfo = await getFileContentWithSha(
+          octokit,
+          repository.owner,
+          repository.name,
+          readmePath,
+          baseBranch,
+        );
 
-				const updatedReadme = insertLanguageLinks(
-					readmeInfo.content,
-					targetLanguages,
-				);
+        const updatedReadme = insertLanguageLinks(
+          readmeInfo.content,
+          targetLanguages,
+        );
 
-				// 检查翻译分支上是否已有 README（可能之前的操作已创建）
-				// 如果有，使用翻译分支上的 SHA；否则使用基准分支的 SHA
-				let readmeSha = readmeInfo.sha;
-				const branchReadmeSha = await getFileSha(
-					octokit,
-					repository.owner,
-					repository.name,
-					readmePath,
-					branchName,
-				);
-				if (branchReadmeSha) {
-					readmeSha = branchReadmeSha;
-				}
+        // 检查翻译分支上是否已有 README（可能之前的操作已创建）
+        // 如果有，使用翻译分支上的 SHA；否则使用基准分支的 SHA
+        let readmeSha = readmeInfo.sha;
+        const branchReadmeSha = await getFileSha(
+          octokit,
+          repository.owner,
+          repository.name,
+          readmePath,
+          branchName,
+        );
+        if (branchReadmeSha) {
+          readmeSha = branchReadmeSha;
+        }
 
-				await createOrUpdateFile(
-					octokit,
-					repository.owner,
-					repository.name,
-					readmePath,
-					updatedReadme,
-					'[Github Translator] Add language switcher to README',
-					branchName,
-					readmeSha,
-				);
+        await createOrUpdateFile(
+          octokit,
+          repository.owner,
+          repository.name,
+          readmePath,
+          updatedReadme,
+          "[Github Translator] Add language switcher to README",
+          branchName,
+          readmeSha,
+        );
 
-				console.log('[Translation] README updated successfully');
-			} catch (error) {
-				console.error('[Translation] Failed to update README:', error);
-			}
-		}
+        console.log("[Translation] README updated successfully");
+      } catch (error) {
+        console.error("[Translation] Failed to update README:", error);
+      }
+    }
 
-		// 10. 创建 Pull Request
-		console.log('[Translation] Creating Pull Request');
-		const pr = await createPullRequest(
-			octokit,
-			repository.owner,
-			repository.name,
-			`[Github Translator] Add translations for ${targetLanguages.join(', ')}`,
-			buildPRDescription(targetLanguages, completedFiles, failedFiles),
-			branchName,
-			baseBranch,
-		);
+    // 10. 创建 Pull Request
+    console.log("[Translation] Creating Pull Request");
+    const pr = await createPullRequest(
+      octokit,
+      repository.owner,
+      repository.name,
+      `[Github Translator] Add translations for ${targetLanguages.join(", ")}`,
+      buildPRDescription(targetLanguages, completedFiles, failedFiles),
+      branchName,
+      baseBranch,
+    );
 
-		console.log(`[Translation] ✓ Pull Request created: ${pr.html_url}`);
+    console.log(`[Translation] ✓ Pull Request created: ${pr.html_url}`);
 
-		// 11. 更新任务状态为完成
-		await prisma.translationTask.update({
-			where: { id: taskId },
-			data: {
-				status: TranslationStatus.COMPLETED,
-				completedAt: new Date(),
-				pullRequestUrl: pr.html_url,
-				pullRequestNumber: pr.number,
-			},
-		});
+    // 11. 更新任务状态为完成
+    await prisma.translationTask.update({
+      where: { id: taskId },
+      data: {
+        status: TranslationStatus.COMPLETED,
+        completedAt: new Date(),
+        pullRequestUrl: pr.html_url,
+        pullRequestNumber: pr.number,
+      },
+    });
 
-		return { success: true, prUrl: pr.html_url };
-	} catch (error) {
-		console.error(`[Translation] Task ${taskId} failed:`, error);
+    return { success: true, prUrl: pr.html_url };
+  } catch (error) {
+    console.error(`[Translation] Task ${taskId} failed:`, error);
 
-		// 更新任务状态为失败
-		await prisma.translationTask.update({
-			where: { id: taskId },
-			data: {
-				status: TranslationStatus.FAILED,
-				completedAt: new Date(),
-				errorMessage: (error as Error).message,
-			},
-		});
+    // 更新任务状态为失败
+    await prisma.translationTask.update({
+      where: { id: taskId },
+      data: {
+        status: TranslationStatus.FAILED,
+        completedAt: new Date(),
+        errorMessage: (error as Error).message,
+      },
+    });
 
-		throw error;
-	}
+    throw error;
+  }
 }
 
 /**
@@ -506,33 +506,33 @@ export async function executeTranslation(
  * 格式: translations-YYYYMMDD-HHmmss
  */
 function generateBranchName(): string {
-	const now = new Date();
-	const year = now.getFullYear();
-	const month = String(now.getMonth() + 1).padStart(2, '0');
-	const day = String(now.getDate()).padStart(2, '0');
-	const hours = String(now.getHours()).padStart(2, '0');
-	const minutes = String(now.getMinutes()).padStart(2, '0');
-	const seconds = String(now.getSeconds()).padStart(2, '0');
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
 
-	return `translations-${year}${month}${day}-${hours}${minutes}${seconds}`;
+  return `translations-${year}${month}${day}-${hours}${minutes}${seconds}`;
 }
 
 /**
  * 构建增量翻译的 PR 描述
  */
 function buildIncrementalPRDescription(
-	targetLanguages: string[],
-	changedFiles: string[],
-	completedFiles: number,
-	failedFiles: number,
+  targetLanguages: string[],
+  changedFiles: string[],
+  completedFiles: number,
+  failedFiles: number,
 ): string {
-	return `## 🌐 Auto Translation (Incremental)
+  return `## 🌐 Auto Translation (Incremental)
 
 This PR was automatically triggered by changes to the following files:
-${changedFiles.map((file) => `- \`${file}\``).join('\n')}
+${changedFiles.map((file) => `- \`${file}\``).join("\n")}
 
 ### Target Languages
-${targetLanguages.map((lang) => `- ${lang}`).join('\n')}
+${targetLanguages.map((lang) => `- ${lang}`).join("\n")}
 
 ### Statistics
 - ✅ Completed: ${completedFiles} files
@@ -548,273 +548,273 @@ ${targetLanguages.map((lang) => `- ${lang}`).join('\n')}
  * 执行增量翻译任务（仅翻译指定的变更文件）
  */
 export async function executeIncrementalTranslation(
-	options: IncrementalTranslationOptions,
+  options: IncrementalTranslationOptions,
 ): Promise<{ success: boolean; prUrl?: string }> {
-	const { taskId, userId, repositoryId, targetLanguages, changedFiles } =
-		options;
+  const { taskId, userId, repositoryId, targetLanguages, changedFiles } =
+    options;
 
-	console.log(`[Translation] Starting incremental task ${taskId}`);
-	console.log(`[Translation] Changed files: ${changedFiles.join(', ')}`);
+  console.log(`[Translation] Starting incremental task ${taskId}`);
+  console.log(`[Translation] Changed files: ${changedFiles.join(", ")}`);
 
-	// 更新任务状态为运行中
-	await prisma.translationTask.update({
-		where: { id: taskId },
-		data: {
-			status: TranslationStatus.RUNNING,
-			startedAt: new Date(),
-		},
-	});
+  // 更新任务状态为运行中
+  await prisma.translationTask.update({
+    where: { id: taskId },
+    data: {
+      status: TranslationStatus.RUNNING,
+      startedAt: new Date(),
+    },
+  });
 
-	try {
-		// 1. 获取仓库信息和配置
-		const repository = await prisma.repository.findUnique({
-			where: { id: repositoryId },
-			include: { config: true, user: true },
-		});
+  try {
+    // 1. 获取仓库信息和配置
+    const repository = await prisma.repository.findUnique({
+      where: { id: repositoryId },
+      include: { config: true, user: true },
+    });
 
-		if (!repository) {
-			throw new Error('Repository not found');
-		}
+    if (!repository) {
+      throw new Error("Repository not found");
+    }
 
-		console.log(`[Translation] Repository: ${repository.fullName}`);
+    console.log(`[Translation] Repository: ${repository.fullName}`);
 
-		// 2. 获取用户的 API Key 和默认模型
-		const { apiKey, defaultModel: userDefaultModel } =
-			await getApiKeyAndModelForUser(userId);
+    // 2. 获取用户的 API Key 和默认模型
+    const { apiKey, defaultModel: userDefaultModel } =
+      await getApiKeyAndModelForUser(userId);
 
-		// 3. 获取 GitHub Octokit 客户端
-		let octokit: Octokit;
+    // 3. 获取 GitHub Octokit 客户端
+    let octokit: Octokit;
 
-		if (repository.user.installationId) {
-			console.log(
-				'[Translation] Using GitHub App Installation ID:',
-				repository.user.installationId,
-			);
-			try {
-				octokit = await getInstallationOctokit(repository.user.installationId);
-				console.log('[Translation] Successfully authenticated with GitHub App');
-			} catch (error) {
-				console.error('[Translation] GitHub App authentication failed:', error);
-				if (repository.user.accessToken) {
-					console.log('[Translation] Falling back to user access token');
-					const accessToken = decrypt(repository.user.accessToken);
-					octokit = getUserOctokit(accessToken);
-				} else {
-					throw error;
-				}
-			}
-		} else if (repository.user.accessToken) {
-			console.log('[Translation] Using user access token');
-			const accessToken = decrypt(repository.user.accessToken);
-			octokit = getUserOctokit(accessToken);
-		} else {
-			throw new Error(
-				'No authentication method available. Please install the GitHub App.',
-			);
-		}
+    if (repository.user.installationId) {
+      console.log(
+        "[Translation] Using GitHub App Installation ID:",
+        repository.user.installationId,
+      );
+      try {
+        octokit = await getInstallationOctokit(repository.user.installationId);
+        console.log("[Translation] Successfully authenticated with GitHub App");
+      } catch (error) {
+        console.error("[Translation] GitHub App authentication failed:", error);
+        if (repository.user.accessToken) {
+          console.log("[Translation] Falling back to user access token");
+          const accessToken = decrypt(repository.user.accessToken);
+          octokit = getUserOctokit(accessToken);
+        } else {
+          throw error;
+        }
+      }
+    } else if (repository.user.accessToken) {
+      console.log("[Translation] Using user access token");
+      const accessToken = decrypt(repository.user.accessToken);
+      octokit = getUserOctokit(accessToken);
+    } else {
+      throw new Error(
+        "No authentication method available. Please install the GitHub App.",
+      );
+    }
 
-		// 4. 使用传入的变更文件列表（已经过 Webhook 筛选）
-		const filesToTranslate = changedFiles;
-		console.log(`[Translation] Files to translate: ${filesToTranslate.length}`);
+    // 4. 使用传入的变更文件列表（已经过 Webhook 筛选）
+    const filesToTranslate = changedFiles;
+    console.log(`[Translation] Files to translate: ${filesToTranslate.length}`);
 
-		if (filesToTranslate.length === 0) {
-			console.log('[Translation] No files to translate');
-			await prisma.translationTask.update({
-				where: { id: taskId },
-				data: {
-					status: TranslationStatus.COMPLETED,
-					completedAt: new Date(),
-				},
-			});
-			return { success: true };
-		}
+    if (filesToTranslate.length === 0) {
+      console.log("[Translation] No files to translate");
+      await prisma.translationTask.update({
+        where: { id: taskId },
+        data: {
+          status: TranslationStatus.COMPLETED,
+          completedAt: new Date(),
+        },
+      });
+      return { success: true };
+    }
 
-		// 5. 更新任务总文件数
-		const totalFiles = filesToTranslate.length * targetLanguages.length;
-		await prisma.translationTask.update({
-			where: { id: taskId },
-			data: { totalFiles },
-		});
+    // 5. 更新任务总文件数
+    const totalFiles = filesToTranslate.length * targetLanguages.length;
+    await prisma.translationTask.update({
+      where: { id: taskId },
+      data: { totalFiles },
+    });
 
-		// 6. 创建翻译分支（使用清晰的时间格式）
-		const branchName = generateBranchName();
-		const baseBranch = repository.defaultBranch;
+    // 6. 创建翻译分支（使用清晰的时间格式）
+    const branchName = generateBranchName();
+    const baseBranch = repository.defaultBranch;
 
-		console.log(`[Translation] Creating branch: ${branchName}`);
-		await createBranch(
-			octokit,
-			repository.owner,
-			repository.name,
-			branchName,
-			baseBranch,
-		);
+    console.log(`[Translation] Creating branch: ${branchName}`);
+    await createBranch(
+      octokit,
+      repository.owner,
+      repository.name,
+      branchName,
+      baseBranch,
+    );
 
-		// 7. 逐个翻译文件
-		let completedFiles = 0;
-		let failedFiles = 0;
-		const baseLanguage = repository.config?.baseLanguage || 'zh-CN';
+    // 7. 逐个翻译文件
+    let completedFiles = 0;
+    let failedFiles = 0;
+    const baseLanguage = repository.config?.baseLanguage || "zh-CN";
 
-		// 模型优先级：仓库配置 > 用户默认 > 系统默认
-		const repoAiModel = repository.config?.aiModel as string | undefined;
-		const aiModel = repoAiModel || userDefaultModel || undefined;
+    // 模型优先级：仓库配置 > 用户默认 > 系统默认
+    const repoAiModel = repository.config?.aiModel as string | undefined;
+    const aiModel = repoAiModel || userDefaultModel || undefined;
 
-		console.log(
-			`[Translation] Using AI model: ${aiModel || 'default (fallback)'}`,
-		);
+    console.log(
+      `[Translation] Using AI model: ${aiModel || "default (fallback)"}`,
+    );
 
-		for (const filePath of filesToTranslate) {
-			// 获取源文件内容
-			let sourceContent: string;
-			try {
-				sourceContent = await getFileContent(
-					octokit,
-					repository.owner,
-					repository.name,
-					filePath,
-					baseBranch,
-				);
-			} catch (error) {
-				console.error(`[Translation] Failed to get file ${filePath}:`, error);
-				continue;
-			}
+    for (const filePath of filesToTranslate) {
+      // 获取源文件内容
+      let sourceContent: string;
+      try {
+        sourceContent = await getFileContent(
+          octokit,
+          repository.owner,
+          repository.name,
+          filePath,
+          baseBranch,
+        );
+      } catch (error) {
+        console.error(`[Translation] Failed to get file ${filePath}:`, error);
+        continue;
+      }
 
-			for (const targetLang of targetLanguages) {
-				try {
-					const targetPath = getTranslatedPath(
-						filePath,
-						targetLang,
-						baseLanguage,
-					);
+      for (const targetLang of targetLanguages) {
+        try {
+          const targetPath = getTranslatedPath(
+            filePath,
+            targetLang,
+            baseLanguage,
+          );
 
-					console.log(
-						`[Translation] Translating ${filePath} to ${targetLang} -> ${targetPath}`,
-					);
+          console.log(
+            `[Translation] Translating ${filePath} to ${targetLang} -> ${targetPath}`,
+          );
 
-					// 创建翻译文件记录
-					const translatedFile = await prisma.translatedFile.create({
-						data: {
-							translationTaskId: taskId,
-							sourcePath: filePath,
-							targetPath,
-							targetLanguage: targetLang,
-							status: FileStatus.TRANSLATING,
-							sourceContent,
-						},
-					});
+          // 创建翻译文件记录
+          const translatedFile = await prisma.translatedFile.create({
+            data: {
+              translationTaskId: taskId,
+              sourcePath: filePath,
+              targetPath,
+              targetLanguage: targetLang,
+              status: FileStatus.TRANSLATING,
+              sourceContent,
+            },
+          });
 
-					// 调用 AI 翻译
-					const translatedContent = await translateWithFallback(
-						sourceContent,
-						baseLanguage,
-						targetLang,
-						apiKey,
-						aiModel,
-					);
+          // 调用 AI 翻译
+          const translatedContent = await translateWithFallback(
+            sourceContent,
+            baseLanguage,
+            targetLang,
+            apiKey,
+            aiModel,
+          );
 
-					// 检查目标文件是否已存在
-					const existingSha = await getFileSha(
-						octokit,
-						repository.owner,
-						repository.name,
-						targetPath,
-						branchName,
-					);
+          // 检查目标文件是否已存在
+          const existingSha = await getFileSha(
+            octokit,
+            repository.owner,
+            repository.name,
+            targetPath,
+            branchName,
+          );
 
-					// 写入 GitHub
-					await createOrUpdateFile(
-						octokit,
-						repository.owner,
-						repository.name,
-						targetPath,
-						translatedContent,
-						`[Github Translator] Translate ${filePath} to ${targetLang}`,
-						branchName,
-						existingSha || undefined,
-					);
+          // 写入 GitHub
+          await createOrUpdateFile(
+            octokit,
+            repository.owner,
+            repository.name,
+            targetPath,
+            translatedContent,
+            `[Github Translator] Translate ${filePath} to ${targetLang}`,
+            branchName,
+            existingSha || undefined,
+          );
 
-					// 更新文件状态
-					await prisma.translatedFile.update({
-						where: { id: translatedFile.id },
-						data: {
-							status: FileStatus.COMPLETED,
-							translatedContent,
-						},
-					});
+          // 更新文件状态
+          await prisma.translatedFile.update({
+            where: { id: translatedFile.id },
+            data: {
+              status: FileStatus.COMPLETED,
+              translatedContent,
+            },
+          });
 
-					completedFiles++;
-					console.log(`[Translation] ✓ Completed ${filePath} -> ${targetLang}`);
-				} catch (error) {
-					console.error(
-						`[Translation] ✗ Failed to translate ${filePath} to ${targetLang}:`,
-						error,
-					);
-					failedFiles++;
+          completedFiles++;
+          console.log(`[Translation] ✓ Completed ${filePath} -> ${targetLang}`);
+        } catch (error) {
+          console.error(
+            `[Translation] ✗ Failed to translate ${filePath} to ${targetLang}:`,
+            error,
+          );
+          failedFiles++;
 
-					await prisma.translatedFile.updateMany({
-						where: {
-							translationTaskId: taskId,
-							sourcePath: filePath,
-							targetLanguage: targetLang,
-						},
-						data: {
-							status: FileStatus.FAILED,
-							errorMessage: (error as Error).message,
-						},
-					});
-				}
+          await prisma.translatedFile.updateMany({
+            where: {
+              translationTaskId: taskId,
+              sourcePath: filePath,
+              targetLanguage: targetLang,
+            },
+            data: {
+              status: FileStatus.FAILED,
+              errorMessage: (error as Error).message,
+            },
+          });
+        }
 
-				// 更新进度
-				const progress = ((completedFiles + failedFiles) / totalFiles) * 100;
-				await prisma.translationTask.update({
-					where: { id: taskId },
-					data: { completedFiles, failedFiles, progress },
-				});
-			}
-		}
+        // 更新进度
+        const progress = ((completedFiles + failedFiles) / totalFiles) * 100;
+        await prisma.translationTask.update({
+          where: { id: taskId },
+          data: { completedFiles, failedFiles, progress },
+        });
+      }
+    }
 
-		// 8. 创建 Pull Request
-		console.log('[Translation] Creating Pull Request');
-		const pr = await createPullRequest(
-			octokit,
-			repository.owner,
-			repository.name,
-			`[Github Translator] Auto-translate ${changedFiles.length} changed file(s)`,
-			buildIncrementalPRDescription(
-				targetLanguages,
-				changedFiles,
-				completedFiles,
-				failedFiles,
-			),
-			branchName,
-			baseBranch,
-		);
+    // 8. 创建 Pull Request
+    console.log("[Translation] Creating Pull Request");
+    const pr = await createPullRequest(
+      octokit,
+      repository.owner,
+      repository.name,
+      `[Github Translator] Auto-translate ${changedFiles.length} changed file(s)`,
+      buildIncrementalPRDescription(
+        targetLanguages,
+        changedFiles,
+        completedFiles,
+        failedFiles,
+      ),
+      branchName,
+      baseBranch,
+    );
 
-		console.log(`[Translation] ✓ Pull Request created: ${pr.html_url}`);
+    console.log(`[Translation] ✓ Pull Request created: ${pr.html_url}`);
 
-		// 9. 更新任务状态为完成
-		await prisma.translationTask.update({
-			where: { id: taskId },
-			data: {
-				status: TranslationStatus.COMPLETED,
-				completedAt: new Date(),
-				pullRequestUrl: pr.html_url,
-				pullRequestNumber: pr.number,
-			},
-		});
+    // 9. 更新任务状态为完成
+    await prisma.translationTask.update({
+      where: { id: taskId },
+      data: {
+        status: TranslationStatus.COMPLETED,
+        completedAt: new Date(),
+        pullRequestUrl: pr.html_url,
+        pullRequestNumber: pr.number,
+      },
+    });
 
-		return { success: true, prUrl: pr.html_url };
-	} catch (error) {
-		console.error(`[Translation] Incremental task ${taskId} failed:`, error);
+    return { success: true, prUrl: pr.html_url };
+  } catch (error) {
+    console.error(`[Translation] Incremental task ${taskId} failed:`, error);
 
-		await prisma.translationTask.update({
-			where: { id: taskId },
-			data: {
-				status: TranslationStatus.FAILED,
-				completedAt: new Date(),
-				errorMessage: (error as Error).message,
-			},
-		});
+    await prisma.translationTask.update({
+      where: { id: taskId },
+      data: {
+        status: TranslationStatus.FAILED,
+        completedAt: new Date(),
+        errorMessage: (error as Error).message,
+      },
+    });
 
-		throw error;
-	}
+    throw error;
+  }
 }

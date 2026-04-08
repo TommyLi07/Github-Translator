@@ -1,6 +1,6 @@
 # Github Translator Docker Compose 配置
 
-version: '3.8'
+version: "3.8"
 
 services:
   app:
@@ -8,7 +8,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '3123:3123'
+      - "3123:3123"
     volumes:
       - ./private-key.pem:/app/private-key.pem:ro
     environment:
@@ -38,18 +38,18 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
-      - '3306:3306'
+      - "3306:3306"
     healthcheck:
       test:
         [
-          'CMD',
-          'mysqladmin',
-          'ping',
-          '-h',
-          'localhost',
-          '-u',
-          'root',
-          '-p${MYSQL_ROOT_PASSWORD:-root_password}',
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-root_password}",
         ]
       timeout: 20s
       retries: 10

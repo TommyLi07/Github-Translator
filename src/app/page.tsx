@@ -4,16 +4,16 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Navbar, Footer } from "@/components/layout";
-import { 
-  Globe, 
-  Zap, 
-  Shield, 
-  RefreshCw, 
-  Languages, 
+import {
+  Globe,
+  Zap,
+  Shield,
+  RefreshCw,
+  Languages,
   GitPullRequest,
   ArrowRight,
   CheckCircle2,
-  Loader2
+  Loader2,
 } from "lucide-react";
 
 const features = [
@@ -65,17 +65,20 @@ export default function Home() {
               <Globe className="h-4 w-4" />
               让你的开源项目走向全球
             </div>
-            
+
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
               一站式 GitHub 仓库
-              <span className="text-primary block md:inline"> 多语言翻译平台</span>
+              <span className="text-primary block md:inline">
+                {" "}
+                多语言翻译平台
+              </span>
             </h1>
-            
+
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               帮助开源项目作者将文档自动翻译成多种语言，扩大国际影响力。
               零配置，一键翻译，AI 驱动。
             </p>
-            
+
             <div className="mt-2 flex justify-center">
               {isLoading ? (
                 <Button size="lg" className="min-w-40" disabled>
@@ -110,7 +113,7 @@ export default function Home() {
                 相比现有方案，我们提供更简单、更高效的翻译体验
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {features.map((feature) => (
                 <div
@@ -120,7 +123,9 @@ export default function Home() {
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-4">
                     <feature.icon className="h-6 w-6" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                  <h3 className="text-lg font-semibold mb-2">
+                    {feature.title}
+                  </h3>
                   <p className="text-muted-foreground">{feature.description}</p>
                 </div>
               ))}
@@ -132,12 +137,14 @@ export default function Home() {
         <section className="py-16 md:py-24 px-4">
           <div className="container mx-auto max-w-4xl">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">三步完成翻译</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                三步完成翻译
+              </h2>
               <p className="text-muted-foreground text-lg">
                 简单几步，让你的项目支持多语言
               </p>
             </div>
-            
+
             <div className="relative">
               <div className="hidden md:block pointer-events-none absolute inset-0 z-30">
                 <div className="absolute top-12 -translate-y-1/2 left-[calc(33.333%-14px)] text-primary/70 arrow-shine arrow-shine-left">
@@ -148,34 +155,34 @@ export default function Home() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10 items-stretch">
-              {[
-                {
-                  step: "1",
-                  title: "导入仓库",
-                  description: "输入 GitHub 仓库 URL，一键导入到平台",
-                },
-                {
-                  step: "2",
-                  title: "配置翻译",
-                  description: "选择基准语言和目标语言，配置翻译范围",
-                },
-                {
-                  step: "3",
-                  title: "开始翻译",
-                  description: "点击翻译按钮，AI 自动完成翻译并创建 PR",
-                },
-              ].map((item) => (
-                <div
-                  key={item.step}
-                  className="relative rounded-xl bg-card p-6 text-center transition-all duration-200 h-full min-h-[220px] flex flex-col items-center"
-                >
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground text-xl font-bold">
-                    {item.step}
+                {[
+                  {
+                    step: "1",
+                    title: "导入仓库",
+                    description: "输入 GitHub 仓库 URL，一键导入到平台",
+                  },
+                  {
+                    step: "2",
+                    title: "配置翻译",
+                    description: "选择基准语言和目标语言，配置翻译范围",
+                  },
+                  {
+                    step: "3",
+                    title: "开始翻译",
+                    description: "点击翻译按钮，AI 自动完成翻译并创建 PR",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.step}
+                    className="relative rounded-xl bg-card p-6 text-center transition-all duration-200 h-full min-h-[220px] flex flex-col items-center"
+                  >
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground text-xl font-bold">
+                      {item.step}
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
+                    <p className="text-muted-foreground">{item.description}</p>
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                  <p className="text-muted-foreground">{item.description}</p>
-                </div>
-              ))}
+                ))}
               </div>
             </div>
           </div>

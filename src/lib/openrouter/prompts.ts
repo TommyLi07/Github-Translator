@@ -1,7 +1,7 @@
 // 翻译 Prompt 构建
 
-import { ChatCompletionRequest } from './client';
-import { DEFAULT_AI_MODEL } from '@/config/constants';
+import { ChatCompletionRequest } from "./client";
+import { DEFAULT_AI_MODEL } from "@/config/constants";
 
 /**
  * 构建翻译 Prompt
@@ -10,13 +10,13 @@ export function buildTranslationPrompt(
   content: string,
   sourceLanguage: string,
   targetLanguage: string,
-  model: string = DEFAULT_AI_MODEL
+  model: string = DEFAULT_AI_MODEL,
 ): ChatCompletionRequest {
   return {
     model,
     messages: [
       {
-        role: 'system',
+        role: "system",
         content: `You are a professional technical documentation translator. Your task is to translate Markdown documents from ${sourceLanguage} to ${targetLanguage}.
 
 Rules:
@@ -34,7 +34,7 @@ Rules:
 Output only the translated Markdown content, nothing else.`,
       },
       {
-        role: 'user',
+        role: "user",
         content: `Translate the following Markdown content from ${sourceLanguage} to ${targetLanguage}:\n\n${content}`,
       },
     ],
@@ -47,13 +47,13 @@ Output only the translated Markdown content, nothing else.`,
  */
 export function buildReadmeAnalysisPrompt(
   content: string,
-  model: string = DEFAULT_AI_MODEL
+  model: string = DEFAULT_AI_MODEL,
 ): ChatCompletionRequest {
   return {
     model,
     messages: [
       {
-        role: 'system',
+        role: "system",
         content: `You are a Markdown structure analyzer. Analyze the README file and determine the best position to insert a language switcher section.
 
 Return ONLY a JSON object with this structure:
@@ -71,7 +71,7 @@ Position priority:
 Count line numbers starting from 0.`,
       },
       {
-        role: 'user',
+        role: "user",
         content: `Analyze this README and suggest where to insert the language switcher:\n\n${content}`,
       },
     ],

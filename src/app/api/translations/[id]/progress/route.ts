@@ -1,19 +1,19 @@
 // 翻译进度 SSE API
 
-import { NextRequest } from 'next/server';
-import { auth } from '@/auth';
-import { prisma } from '@/lib/db';
+import { NextRequest } from "next/server";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
 
 /**
  * GET /api/translations/:id/progress - 获取翻译进度（SSE）
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const session = await auth();
   if (!session?.user?.id) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const taskId = params.id;
@@ -27,7 +27,7 @@ export async function GET(
   });
 
   if (!task) {
-    return new Response('Task not found', { status: 404 });
+    return new Response("Task not found", { status: 404 });
   }
 
   // 创建 SSE 响应
@@ -35,9 +35,7 @@ export async function GET(
   const stream = new ReadableStream({
     async start(controller) {
       const sendEvent = (data: object) => {
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
-        );
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
       };
 
       // 轮询任务状态
@@ -74,19 +72,21 @@ export async function GET(
           });
 
           // 如果任务完成或失败，停止轮询
-          if (['COMPLETED', 'FAILED', 'CANCELLED'].includes(currentTask.status)) {
+          if (
+            ["COMPLETED", "FAILED", "CANCELLED"].includes(currentTask.status)
+          ) {
             clearInterval(pollInterval);
             controller.close();
           }
         } catch (error) {
-          console.error('Error polling task status:', error);
+          console.error("Error polling task status:", error);
           clearInterval(pollInterval);
           controller.close();
         }
       }, 1000); // 每秒轮询一次
 
       // 清理
-      request.signal.addEventListener('abort', () => {
+      request.signal.addEventListener("abort", () => {
         clearInterval(pollInterval);
         controller.close();
       });
@@ -95,9 +95,9 @@ export async function GET(
 
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
     },
   });
 }

@@ -1,8 +1,8 @@
 // GitHub 操作封装
 
-import { Octokit } from 'octokit';
-import { FileTreeNode } from '@/types';
-import { SKIP_DIRECTORIES } from '@/config/constants';
+import { Octokit } from "octokit";
+import { FileTreeNode } from "@/types";
+import { SKIP_DIRECTORIES } from "@/config/constants";
 
 /**
  * 获取仓库内容
@@ -11,7 +11,7 @@ export async function getRepoContents(
   octokit: Octokit,
   owner: string,
   repo: string,
-  path: string = ''
+  path: string = "",
 ) {
   const { data } = await octokit.rest.repos.getContent({
     owner,
@@ -28,8 +28,8 @@ export async function getFileTree(
   octokit: Octokit,
   owner: string,
   repo: string,
-  path: string = '',
-  markdownOnly: boolean = false
+  path: string = "",
+  markdownOnly: boolean = false,
 ): Promise<FileTreeNode[]> {
   const { data } = await octokit.rest.repos.getContent({
     owner,
@@ -38,60 +38,72 @@ export async function getFileTree(
   });
 
   const items = Array.isArray(data) ? data : [data];
-  
+
   // 分离目录和文件
-  const dirItems = items.filter(item => item.type === 'dir' && !SKIP_DIRECTORIES.includes(item.name));
-  const fileItems = items.filter(item => item.type === 'file');
-  
+  const dirItems = items.filter(
+    (item) => item.type === "dir" && !SKIP_DIRECTORIES.includes(item.name),
+  );
+  const fileItems = items.filter((item) => item.type === "file");
+
   // 处理目录（并行获取子内容）
-  const dirPromises = dirItems.map(async (item): Promise<FileTreeNode | null> => {
-    try {
-      const children = await getFileTree(octokit, owner, repo, item.path, markdownOnly);
-      
-      // 如果启用了 markdownOnly 模式，只保留包含 Markdown 文件的目录
-      if (markdownOnly && children.length === 0) {
+  const dirPromises = dirItems.map(
+    async (item): Promise<FileTreeNode | null> => {
+      try {
+        const children = await getFileTree(
+          octokit,
+          owner,
+          repo,
+          item.path,
+          markdownOnly,
+        );
+
+        // 如果启用了 markdownOnly 模式，只保留包含 Markdown 文件的目录
+        if (markdownOnly && children.length === 0) {
+          return null;
+        }
+
+        return {
+          name: item.name,
+          path: item.path,
+          type: "dir",
+          children,
+        };
+      } catch (error) {
+        console.error(`Error fetching directory ${item.path}:`, error);
         return null;
       }
-      
-      return {
-        name: item.name,
-        path: item.path,
-        type: 'dir',
-        children,
-      };
-    } catch (error) {
-      console.error(`Error fetching directory ${item.path}:`, error);
-      return null;
-    }
-  });
-  
+    },
+  );
+
   // 处理文件
   const fileNodes: FileTreeNode[] = fileItems
     .map((item): FileTreeNode | null => {
-      const isMarkdown = item.name.endsWith('.md') || item.name.endsWith('.mdx');
-      
+      const isMarkdown =
+        item.name.endsWith(".md") || item.name.endsWith(".mdx");
+
       // 如果启用了 markdownOnly 模式，只保留 Markdown 文件
       if (markdownOnly && !isMarkdown) {
         return null;
       }
-      
+
       return {
         name: item.name,
         path: item.path,
-        type: 'file',
+        type: "file",
         isMarkdown,
       };
     })
     .filter((node): node is FileTreeNode => node !== null);
 
   // 等待目录处理完成
-  const dirNodes = (await Promise.all(dirPromises))
-    .filter((node): node is FileTreeNode => node !== null);
-  
+  const dirNodes = (await Promise.all(dirPromises)).filter(
+    (node): node is FileTreeNode => node !== null,
+  );
+
   // 按 GitHub 风格排序：目录在前（按名称排序），文件在后（按名称排序）
   const sortedDirs = dirNodes.sort((a, b) => a.name.localeCompare(b.name));
   const sortedFiles = fileNodes.sort((a, b) => a.name.localeCompare(b.name));
-  
+
   return [...sortedDirs, ...sortedFiles];
 }
 
@@ -111,7 +123,7 @@ export async function getFileContent(
   owner: string,
   repo: string,
   path: string,
-  ref?: string
+  ref?: string,
 ): Promise<string> {
   const { data } = await octokit.rest.repos.getContent({
     owner,
@@ -120,11 +132,11 @@ export async function getFileContent(
     ref,
   });
 
-  if (Array.isArray(data) || data.type !== 'file') {
-    throw new Error('Path is not a file');
+  if (Array.isArray(data) || data.type !== "file") {
+    throw new Error("Path is not a file");
   }
 
-  return Buffer.from(data.content, 'base64').toString('utf-8');
+  return Buffer.from(data.content, "base64").toString("utf-8");
 }
 
 /**
@@ -135,7 +147,7 @@ export async function getFileContentWithSha(
   owner: string,
   repo: string,
   path: string,
-  ref?: string
+  ref?: string,
 ): Promise<FileInfo> {
   const { data } = await octokit.rest.repos.getContent({
     owner,
@@ -144,12 +156,12 @@ export async function getFileContentWithSha(
     ref,
   });
 
-  if (Array.isArray(data) || data.type !== 'file') {
-    throw new Error('Path is not a file');
+  if (Array.isArray(data) || data.type !== "file") {
+    throw new Error("Path is not a file");
   }
 
   return {
-    content: Buffer.from(data.content, 'base64').toString('utf-8'),
+    content: Buffer.from(data.content, "base64").toString("utf-8"),
     sha: data.sha,
   };
 }
@@ -162,7 +174,7 @@ export async function getFileSha(
   owner: string,
   repo: string,
   path: string,
-  ref?: string
+  ref?: string,
 ): Promise<string | null> {
   try {
     const { data } = await octokit.rest.repos.getContent({
@@ -172,7 +184,7 @@ export async function getFileSha(
       ref,
     });
 
-    if (Array.isArray(data) || data.type !== 'file') {
+    if (Array.isArray(data) || data.type !== "file") {
       return null;
     }
 
@@ -193,7 +205,7 @@ export async function createBranch(
   owner: string,
   repo: string,
   branchName: string,
-  baseBranch: string
+  baseBranch: string,
 ) {
   // 获取基础分支的 SHA
   const { data: refData } = await octokit.rest.git.getRef({
@@ -226,14 +238,14 @@ export async function createOrUpdateFile(
   content: string,
   message: string,
   branch: string,
-  sha?: string
+  sha?: string,
 ) {
   const { data } = await octokit.rest.repos.createOrUpdateFileContents({
     owner,
     repo,
     path,
     message,
-    content: Buffer.from(content).toString('base64'),
+    content: Buffer.from(content).toString("base64"),
     branch,
     sha,
   });
@@ -251,7 +263,7 @@ export async function createPullRequest(
   title: string,
   body: string,
   head: string,
-  base: string
+  base: string,
 ) {
   const { data } = await octokit.rest.pulls.create({
     owner,
@@ -273,7 +285,7 @@ export async function compareCommits(
   owner: string,
   repo: string,
   base: string,
-  head: string
+  head: string,
 ) {
   const { data } = await octokit.rest.repos.compareCommits({
     owner,
@@ -291,7 +303,7 @@ export async function compareCommits(
 export async function getRepository(
   octokit: Octokit,
   owner: string,
-  repo: string
+  repo: string,
 ) {
   const { data } = await octokit.rest.repos.get({
     owner,
@@ -309,7 +321,7 @@ export async function fileExists(
   owner: string,
   repo: string,
   path: string,
-  ref?: string
+  ref?: string,
 ): Promise<boolean> {
   try {
     await octokit.rest.repos.getContent({

@@ -11,13 +11,13 @@ export interface AIModel {
   name: string;
   provider: string;
   recommended: boolean;
-  description?: string;  // 模型描述
+  description?: string; // 模型描述
 }
 
 export interface FileTreeNode {
   name: string;
   path: string;
-  type: 'file' | 'dir';
+  type: "file" | "dir";
   children?: FileTreeNode[];
   isMarkdown?: boolean;
 }
@@ -40,7 +40,7 @@ export interface TranslationProgress {
 export interface CreateTranslationTaskRequest {
   repositoryId: string;
   targetLanguages: string[];
-  type?: 'FULL' | 'INCREMENTAL';
+  type?: "FULL" | "INCREMENTAL";
 }
 
 export interface UpdateRepoConfigRequest {
@@ -49,5 +49,5 @@ export interface UpdateRepoConfigRequest {
   includePaths?: string[];
   excludePaths?: string[];
   aiModel?: string;
-  autoTranslate?: boolean;  // 是否启用自动翻译
+  autoTranslate?: boolean; // 是否启用自动翻译
 }
